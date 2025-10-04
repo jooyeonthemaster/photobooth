@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(where CameraControlCmd)",
+      "Bash(where CameraControl)",
+      "Bash(test:*)",
+      "Read(//c/Program Files (x86)/digiCamControl/**)",
+      "Bash(\"/c/Program Files (x86)/digiCamControl/CameraControlCmd.exe\" /help)",
+      "Bash(node:*)",
+      "Bash(\"/c/Program Files (x86)/digiCamControl/CameraControlCmd.exe\" /c help)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(\"/c/Program Files (x86)/digiCamControl/CameraControlCmd.exe\" /c capture)",
+      "Read(//c/Users/jooye/Pictures/**)",
+      "Bash(tree:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist)",
+      "Read(//c/Program Files (x86)/digiCamControl//**)",
+      "Bash(npm run server:*)",
+      "Bash(npm run dev:*)",
+      "Bash(taskkill:*)",
+      "Read(//c/Users/jooye/Desktop/free/kpop2/**)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git rm:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(git reset:*)",
+      "Bash(git fetch:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

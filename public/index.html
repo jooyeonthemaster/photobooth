@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>포토부스</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 800px;
+      width: 90%;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+    .camera-preview {
+      width: 100%;
+      height: 400px;
+      background: #f0f0f0;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+      color: #999;
+    }
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+    .gallery {
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .gallery img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📸 포토부스</h1>
+    <div class="camera-preview">
+      <p>카메라 프리뷰</p>
+    </div>
+    <button onclick="capturePhoto()">사진 촬영</button>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+  <script>
+    async function capturePhoto() {
+      console.log('capturePhoto() called!');
+      try {
+        console.log('Sending request to /capture...');
+        const response = await fetch('/capture', { method: 'POST' });
+        console.log('Response received:', response);
+        const data = await response.json();
+        console.log('Data:', data);
+        if (data.success) {
+          alert('사진 촬영 완료!');
+          loadGallery();
+        } else {
+          alert(data.message || '촬영 실패');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('촬영 실패: ' + error.message);
+      }
+    }
+
+    async function loadGallery() {
+      try {
+        const response = await fetch('/photos');
+        const data = await response.json();
+        const gallery = document.getElementById('gallery');
+        gallery.innerHTML = data.photos.map(photo =>
+          `<img src="/photos/${photo}" alt="photo">`
+        ).join('');
+      } catch (error) {
+        console.error('갤러리 로드 실패:', error);
+      }
+    }
+
+    loadGallery();
+  </script>
+</body>
+</html>
