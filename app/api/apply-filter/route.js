@@ -5,19 +5,24 @@ const genAI = new GoogleGenAI({
   apiKey: process.env.GOOGLE_GEMINI_API_KEY
 });
 
-// 미친 창의적인 필터 프롬프트들
+// 원본 인물 보존형 필터 프롬프트들
 const FILTER_PROMPTS = {
   'kpop-idol': {
     name: 'K-POP 아이돌',
     emoji: '✨',
     prompt: `
-Apply professional K-POP IDOL makeup style:
-- Flawless glass skin with dewy finish
-- Soft eyeshadow with thin eyeliner
-- Natural gradient lips (pink/coral)
-- Well-groomed Korean-style eyebrows
-- Subtle pink blush on cheekbones
-Create an elegant, camera-ready K-pop idol look.
+IMPORTANT: Keep the person's original facial features, bone structure, and identity intact. Only apply makeup and lighting effects.
+
+Apply professional K-POP IDOL makeup to the existing face:
+- Add glass skin effect and dewy finish to their existing skin tone
+- Apply soft eyeshadow and thin eyeliner around their original eyes
+- Add natural gradient lips (pink/coral) to their existing lip shape
+- Enhance their existing eyebrows into Korean-style shape
+- Add subtle pink blush on their natural cheekbones
+- Improve lighting and add soft glow
+
+PRESERVE: Face shape, eye shape, nose, facial proportions, identity
+MODIFY: Only makeup, skin texture, lighting, and color grading
 `
   },
 
@@ -25,14 +30,18 @@ Create an elegant, camera-ready K-pop idol look.
     name: '애니메이션 캐릭터',
     emoji: '🎌',
     prompt: `
-Transform this person into an ANIME CHARACTER:
-- Large, sparkly anime-style eyes with highlights
-- Smooth, cell-shaded anime skin texture
-- Vibrant, exaggerated hair colors and shine
-- Anime-style facial features (smaller nose, larger eyes)
-- Add anime-style blush marks and expression lines
-- Soft, glowing anime lighting effects
-Make them look like they walked out of a Japanese anime!
+IMPORTANT: Maintain the person's original face and features. Apply anime art style as an overlay effect only.
+
+Apply ANIME ART STYLE to their existing face:
+- Add sparkly highlights to their existing eyes (keep eye shape)
+- Apply cell-shading technique to their existing skin and features
+- Add anime-style shine effects to their natural hair color
+- Draw subtle anime blush marks on their cheeks
+- Apply anime-style lighting and soft glow effects
+- Add slight outline effect around facial features
+
+PRESERVE: Facial structure, eye/nose/mouth positions, face shape, identity
+MODIFY: Only art style, shading technique, highlights, and drawing style overlay
 `
   },
 
@@ -40,14 +49,18 @@ Make them look like they walked out of a Japanese anime!
     name: '좀비 아포칼립스',
     emoji: '🧟',
     prompt: `
-Transform into a TERRIFYING ZOMBIE:
-- Decaying, pale greenish-gray skin
-- Dark circles and sunken eyes
-- Fake blood and wounds on face
-- Disheveled, dirty hair
-- Cracked lips and visible teeth
-- Zombie-like makeup with realistic gore effects
-Create a horrifying undead apocalypse survivor look!
+IMPORTANT: Keep the person's face recognizable. Only add zombie makeup effects.
+
+Apply ZOMBIE MAKEUP to their existing face:
+- Add pale greenish-gray tone to their existing skin
+- Apply dark circles and tired effects around their original eyes
+- Add fake blood and wound makeup on face
+- Make their existing hair look disheveled and dirty
+- Apply cracked lip makeup and pale coloring
+- Add realistic horror makeup effects
+
+PRESERVE: Face shape, bone structure, facial features, identity
+MODIFY: Only skin color, makeup effects, hair styling, and wounds
 `
   },
 
@@ -55,14 +68,18 @@ Create a horrifying undead apocalypse survivor look!
     name: '사이버펑크 네온',
     emoji: '🌃',
     prompt: `
-Apply CYBERPUNK 2077 style transformation:
-- Neon glowing tattoos on face (pink, blue, cyan)
-- Futuristic chrome metallic skin highlights
-- Holographic makeup with digital glitch effects
-- LED light strips on cheekbones
-- Cybernetic eye enhancements with glowing irises
-- High-tech facial implants and modifications
-Create a futuristic cyberpunk netrunner aesthetic!
+IMPORTANT: Keep original facial features intact. Only add cyberpunk visual effects and makeup.
+
+Apply CYBERPUNK effects to their existing face:
+- Add small neon glowing tattoo patterns on their skin (pink, blue, cyan)
+- Apply chrome metallic highlights to their existing features
+- Add holographic makeup with subtle digital glitch effects
+- Place thin LED light strips on their cheekbones
+- Add glowing iris effects to their existing eyes
+- Apply futuristic makeup and lighting
+
+PRESERVE: Face shape, eye shape, nose, facial proportions, identity
+MODIFY: Only lighting effects, makeup, glowing elements, and color overlays
 `
   },
 
@@ -70,14 +87,18 @@ Create a futuristic cyberpunk netrunner aesthetic!
     name: '르네상스 명화',
     emoji: '🖼️',
     prompt: `
-Transform into a RENAISSANCE OIL PAINTING:
-- Classical oil painting texture and brushstrokes
-- Soft, diffused lighting like 16th century portraits
-- Rich, warm color palette with deep shadows
-- Classical European noble attire and styling
-- Ornate background with golden tones
-- Realistic Renaissance-era makeup and hairstyles
-Make them look like a Da Vinci or Raphael masterpiece!
+IMPORTANT: Keep the person's face recognizable. Apply painting technique as artistic filter only.
+
+Apply RENAISSANCE PAINTING style to their existing portrait:
+- Add oil painting texture overlay to their existing features
+- Apply soft, diffused 16th century lighting to their face
+- Use rich, warm color palette and subtle shadows
+- Add painted background in classical style
+- Apply subtle period-appropriate makeup and hair styling
+- Use painterly brushstroke effects
+
+PRESERVE: Facial structure, features, identity, face shape
+MODIFY: Only art texture, lighting style, color palette, and painting technique
 `
   },
 
@@ -85,14 +106,18 @@ Make them look like a Da Vinci or Raphael masterpiece!
     name: '픽사 3D 캐릭터',
     emoji: '🎬',
     prompt: `
-Transform into a PIXAR 3D ANIMATED CHARACTER:
-- Smooth, stylized 3D rendering like Toy Story
-- Exaggerated, friendly cartoon features
-- Large expressive eyes with perfect highlights
-- Soft, appealing character design
-- Vibrant colors with subtle subsurface scattering
-- Adorable, family-friendly Pixar aesthetic
-Make them look like they belong in a Pixar movie!
+IMPORTANT: Maintain person's recognizable features. Apply Pixar 3D art style subtly.
+
+Apply PIXAR 3D STYLE to their existing face:
+- Add smooth 3D rendering effect to their features
+- Slightly enhance their existing expressive features
+- Add perfect highlights to their original eyes
+- Apply soft, appealing character lighting
+- Use vibrant colors with subtle subsurface scattering on their skin
+- Add Pixar-style warmth and glow
+
+PRESERVE: Face shape, eye/nose/mouth proportions, identity, bone structure
+MODIFY: Only rendering style, lighting, slight feature enhancement, and color vibrancy
 `
   },
 
@@ -100,14 +125,18 @@ Make them look like they belong in a Pixar movie!
     name: '80년 후 나',
     emoji: '👴',
     prompt: `
-AGE PROGRESSION to 80 YEARS OLD:
-- Deep wrinkles and age lines
-- Gray or white hair
-- Age spots and skin texture changes
-- Drooping facial features
-- Thinner lips and sagging skin
-- Realistic elderly appearance
-Show what they'll look like as a grandparent!
+IMPORTANT: Keep the person identifiable. Age their existing features naturally.
+
+Apply AGE PROGRESSION to their existing face:
+- Add realistic wrinkles and age lines to their face structure
+- Change their existing hair to gray or white
+- Add subtle age spots to their skin
+- Apply natural aging to their existing features
+- Add slight drooping effect while maintaining their bone structure
+- Make them look elderly but still recognizable
+
+PRESERVE: Core facial structure, identity, eye/nose proportions
+MODIFY: Only skin texture, hair color, wrinkles, and aging effects
 `
   },
 
@@ -115,14 +144,18 @@ Show what they'll look like as a grandparent!
     name: '아기 버전',
     emoji: '👶',
     prompt: `
-Transform into a CUTE BABY:
-- Chubby baby cheeks and round face
-- Large innocent eyes
-- Smooth baby skin texture
-- Tiny nose and small features
-- Baby-like proportions
-- Adorable infant appearance
-Show their baby version!
+IMPORTANT: Keep person's recognizable features. Apply baby-like effects subtly.
+
+Apply BABY EFFECTS to their existing face:
+- Add slight chubby cheeks to their face
+- Soften and round their existing features slightly
+- Apply smooth baby-like skin texture
+- Make their existing features look younger and cuter
+- Keep their original eye and nose shape, just soften
+- Add baby-like innocence while maintaining identity
+
+PRESERVE: Facial identity, core features, bone structure
+MODIFY: Only skin smoothness, slight feature softening, and youthful effect
 `
   },
 
@@ -130,15 +163,19 @@ Show their baby version!
     name: '보그 매거진 커버',
     emoji: '💄',
     prompt: `
-Create a VOGUE MAGAZINE COVER look:
-- High-fashion editorial makeup
-- Dramatic contouring and highlighting
-- Bold, artistic eye makeup
-- Glossy statement lips
-- Professional studio lighting effects
-- Flawless retouched skin
-- Elegant, sophisticated styling
-Magazine cover-ready glamour shot!
+IMPORTANT: Keep original face intact. Apply high-fashion editorial makeup only.
+
+Apply VOGUE EDITORIAL MAKEUP to their existing face:
+- Apply high-fashion editorial makeup to their features
+- Add dramatic contouring to enhance their existing bone structure
+- Apply bold, artistic eye makeup to their original eyes
+- Add glossy statement lips to their lip shape
+- Apply professional studio lighting to their face
+- Add flawless retouching while keeping their identity
+- Use elegant color grading
+
+PRESERVE: Face shape, facial features, identity, proportions
+MODIFY: Only makeup, lighting, retouching, and color grading
 `
   },
 
@@ -146,15 +183,18 @@ Magazine cover-ready glamour shot!
     name: '디즈니 악당',
     emoji: '😈',
     prompt: `
-Transform into a DISNEY VILLAIN:
-- Dramatic dark makeup (Maleficent/Ursula style)
-- Sharp, angular features
-- Bold dark eyebrows
-- Deep red or purple lips
-- Theatrical villain styling
-- Mysterious and intimidating look
-- Exaggerated villain expressions
-Evil Disney antagonist transformation!
+IMPORTANT: Maintain person's recognizable face. Apply villain makeup and styling only.
+
+Apply DISNEY VILLAIN makeup to their existing face:
+- Add dramatic dark makeup (Maleficent/Ursula style) to their features
+- Enhance their existing eyebrows into bold dark shape
+- Apply deep red or purple lips to their mouth
+- Add theatrical villain makeup and styling
+- Apply mysterious and dramatic lighting
+- Keep their facial structure while adding villain aesthetic
+
+PRESERVE: Face shape, bone structure, facial features, identity
+MODIFY: Only makeup, expression, lighting, and styling effects
 `
   },
 
@@ -162,15 +202,18 @@ Evil Disney antagonist transformation!
     name: '마블 슈퍼히어로',
     emoji: '🦸',
     prompt: `
-Transform into a MARVEL SUPERHERO:
-- Comic book-style bold features
-- Dramatic superhero makeup
-- Face paint in heroic colors
-- Determined, powerful expression
-- Glowing effects around eyes
-- Dynamic superhero styling
-- Epic cinematic lighting
-Ready to save the world!
+IMPORTANT: Keep person's face recognizable. Add superhero makeup and effects only.
+
+Apply SUPERHERO STYLING to their existing face:
+- Add dramatic superhero makeup to their features
+- Apply subtle face paint in heroic colors
+- Add glowing effects around their existing eyes
+- Apply dynamic superhero styling and lighting
+- Add epic cinematic effects
+- Enhance their determined expression
+
+PRESERVE: Facial structure, features, identity, face shape
+MODIFY: Only makeup, lighting effects, face paint, and color grading
 `
   },
 
@@ -178,14 +221,18 @@ Ready to save the world!
     name: '외계인',
     emoji: '👽',
     prompt: `
-Transform into an ALIEN BEING:
-- Otherworldly skin tone (green, blue, or iridescent)
-- Large, mysterious alien eyes
-- Smooth, non-human features
-- Bioluminescent patterns on skin
-- Antenna or alien head features
-- Sci-fi extraterrestrial appearance
-Close encounter transformation!
+IMPORTANT: Keep face recognizable as the same person. Apply alien makeup effects only.
+
+Apply ALIEN MAKEUP to their existing face:
+- Add otherworldly skin tone (subtle green, blue tint) to their skin
+- Apply alien-inspired makeup around their existing eyes
+- Add bioluminescent pattern makeup on their skin
+- Apply sci-fi makeup and lighting effects
+- Keep their facial structure while adding alien aesthetic
+- Add subtle alien-inspired styling
+
+PRESERVE: Face shape, bone structure, facial proportions, identity
+MODIFY: Only skin tone, makeup effects, lighting, and subtle alien styling
 `
   },
 
@@ -193,15 +240,18 @@ Close encounter transformation!
     name: '인스타 인플루언서',
     emoji: '📸',
     prompt: `
-Apply EXTREME INSTAGRAM FILTER:
-- Ultra-smooth airbrushed skin
-- Enlarged eyes with sparkles
-- Plumped lips with gloss
-- Slimmed nose and face
-- Heavy beauty filter effects
-- Perfect lighting and glow
-- Influencer-level face tune
-Maximum Instagram aesthetic!
+IMPORTANT: Keep person identifiable. Apply Instagram beauty filter effects only.
+
+Apply INSTAGRAM BEAUTY FILTER to their existing face:
+- Apply smooth skin filter to their existing features
+- Add subtle eye enhancement (slight enlargement, sparkles)
+- Apply subtle lip enhancement with gloss
+- Add gentle slimming to their face shape
+- Apply beauty filter effects and perfect lighting
+- Add Instagram-style glow and color grading
+
+PRESERVE: Face shape, core features, identity, recognizability
+MODIFY: Only smoothing, subtle enhancements, lighting, and filter effects
 `
   },
 
@@ -209,14 +259,18 @@ Maximum Instagram aesthetic!
     name: '서커스 광대',
     emoji: '🤡',
     prompt: `
-Transform into a CIRCUS CLOWN:
-- White face paint base
-- Red nose and exaggerated smile
-- Colorful clown makeup
-- Wild, crazy hair
-- Dramatic expressions
-- Theatrical circus performer look
-Scary or funny clown transformation!
+IMPORTANT: Maintain person's recognizable face. Apply clown makeup only.
+
+Apply CIRCUS CLOWN MAKEUP to their existing face:
+- Add white face paint base over their skin
+- Paint red nose and exaggerated smile on their features
+- Apply colorful clown makeup around eyes and cheeks
+- Style their existing hair in clown fashion
+- Keep their facial structure visible under makeup
+- Add theatrical clown styling
+
+PRESERVE: Face shape, bone structure, facial features, identity
+MODIFY: Only makeup, face paint, hair styling, and clown accessories
 `
   },
 
@@ -224,15 +278,18 @@ Scary or funny clown transformation!
     name: '뱀파이어 고딕',
     emoji: '🧛',
     prompt: `
-Transform into a GOTHIC VAMPIRE:
-- Pale, porcelain white skin
-- Dark smoky eyes with red accents
-- Blood-red lips
-- Sharp, defined features
-- Gothic dramatic makeup
-- Mysterious vampire aesthetic
-- Dark, romantic styling
-Eternal creature of the night!
+IMPORTANT: Keep person's face intact. Apply vampire gothic makeup only.
+
+Apply GOTHIC VAMPIRE MAKEUP to their existing face:
+- Add pale, porcelain skin tone to their existing skin
+- Apply dark smoky eye makeup with red accents to their eyes
+- Add blood-red lips to their mouth
+- Enhance their existing features with gothic makeup
+- Apply dramatic vampire lighting
+- Keep their facial structure while adding vampire aesthetic
+
+PRESERVE: Face shape, facial features, bone structure, identity
+MODIFY: Only makeup, skin tone, lighting, and gothic styling
 `
   },
 
@@ -240,14 +297,18 @@ Eternal creature of the night!
     name: '팝아트 (앤디 워홀)',
     emoji: '🎨',
     prompt: `
-Transform into POP ART style (Andy Warhol):
-- Bold, high-contrast colors
-- Halftone dot patterns
-- Comic book-style outlines
-- Vibrant primary colors
-- Flat, graphic design aesthetic
-- 1960s pop art movement style
-Like a Warhol Marilyn Monroe print!
+IMPORTANT: Maintain person's face structure. Apply pop art style as artistic filter only.
+
+Apply POP ART STYLE (Andy Warhol) to their existing portrait:
+- Add bold, high-contrast colors to their existing features
+- Apply halftone dot pattern overlay
+- Add comic book-style outlines around their features
+- Use vibrant color blocks on their face
+- Apply flat, graphic design aesthetic
+- Keep their facial structure clearly recognizable
+
+PRESERVE: Face shape, facial features, identity, proportions
+MODIFY: Only art style, color treatment, patterns, and graphic effects
 `
   },
 
@@ -255,14 +316,18 @@ Like a Warhol Marilyn Monroe print!
     name: '크리스탈 보석인간',
     emoji: '💎',
     prompt: `
-Transform into a CRYSTAL GEM BEING:
-- Skin made of shimmering crystals
-- Diamond and gemstone textures
-- Iridescent rainbow reflections
-- Sparkling, faceted features
-- Magical gem-like appearance
-- Glowing crystal energy
-Living precious stone transformation!
+IMPORTANT: Keep person identifiable. Add crystal effects as overlay only.
+
+Apply CRYSTAL GEM EFFECTS to their existing face:
+- Add shimmering crystal-like texture overlay to their skin
+- Apply iridescent rainbow reflections to their features
+- Add sparkling, faceted effects while keeping face shape
+- Apply magical gem-like makeup and lighting
+- Add glowing crystal effects
+- Keep their facial structure clearly visible
+
+PRESERVE: Face shape, bone structure, facial features, identity
+MODIFY: Only texture overlay, lighting effects, sparkles, and color reflections
 `
   },
 
@@ -270,14 +335,18 @@ Living precious stone transformation!
     name: '유화 아트',
     emoji: '🖌️',
     prompt: `
-Transform into an IMPRESSIONIST OIL PAINTING:
-- Visible brushstroke texture
-- Rich, vibrant oil paint colors
-- Artistic impressionist style
-- Painterly effects and blending
-- Museum-quality art piece
-- Van Gogh or Monet inspired
-Living artwork transformation!
+IMPORTANT: Keep person's face recognizable. Apply oil painting technique as artistic filter only.
+
+Apply IMPRESSIONIST OIL PAINTING style to their existing portrait:
+- Add visible brushstroke texture overlay to their features
+- Apply rich, vibrant oil paint color treatment
+- Use artistic impressionist style while maintaining their face
+- Apply painterly effects and blending
+- Add Van Gogh or Monet inspired technique
+- Keep their facial structure clear
+
+PRESERVE: Facial structure, features, identity, face shape
+MODIFY: Only paint texture, artistic technique, color treatment, and brushstroke effects
 `
   },
 
@@ -285,15 +354,18 @@ Living artwork transformation!
     name: '드랙퀸 글램',
     emoji: '👑',
     prompt: `
-Transform into DRAG QUEEN GLAMOUR:
-- Over-the-top dramatic makeup
-- Extreme contouring and highlighting
-- Bold, colorful eye makeup
-- Exaggerated lashes and brows
-- Glossy statement lips
-- Theatrical drag performance look
-- Fierce and fabulous!
-RuPaul's Drag Race ready!
+IMPORTANT: Keep person's face intact. Apply drag queen makeup only.
+
+Apply DRAG QUEEN MAKEUP to their existing face:
+- Apply dramatic makeup to their existing features
+- Add extreme contouring to enhance their bone structure
+- Apply bold, colorful eye makeup to their eyes
+- Add exaggerated lashes and enhanced brows
+- Apply glossy statement lips to their mouth
+- Keep their facial structure recognizable under dramatic makeup
+
+PRESERVE: Face shape, bone structure, facial features, identity
+MODIFY: Only makeup application, contouring, lashes, and glamour effects
 `
   },
 
@@ -301,14 +373,18 @@ RuPaul's Drag Race ready!
     name: '인어공주',
     emoji: '🧜‍♀️',
     prompt: `
-Transform into a MYSTICAL MERMAID:
-- Iridescent scales on skin
-- Ocean-inspired makeup (blues, greens, pearls)
-- Glittery, shimmering effects
-- Seashell and coral accessories
-- Underwater fantasy aesthetic
-- Aquatic goddess appearance
-Under the sea transformation!
+IMPORTANT: Maintain person's recognizable face. Add mermaid makeup and effects only.
+
+Apply MERMAID FANTASY MAKEUP to their existing face:
+- Add subtle iridescent scale makeup on their skin
+- Apply ocean-inspired makeup (blues, greens, pearls) to their features
+- Add glittery, shimmering effects
+- Apply underwater-inspired makeup and accessories
+- Add aquatic goddess styling
+- Keep their facial structure clearly visible
+
+PRESERVE: Face shape, bone structure, facial features, identity
+MODIFY: Only makeup, scale effects, glitter, lighting, and mermaid accessories
 `
   }
 };

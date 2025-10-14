@@ -54,31 +54,36 @@ export async function POST(request) {
     // Canvas를 사용하여 이미지 합성
     const { createCanvas, loadImage } = await import('canvas');
 
-    // 프레임 색상 설정
-    const frameColors = {
-      classic: '#ffffff',
-      pink: '#FFB3D9',
-      blue: '#B3D9FF',
-      black: '#2a2a2a'
-    };
+    // SVG 프레임 로드
+    const framePath = path.join(process.cwd(), 'public', 'frame', 'NEANDER LAB AI PHOTOBOOTH.svg');
+    const frameSvgData = await fs.readFile(framePath, 'utf-8');
 
-    const bgColor = frameColors[frame] || '#ffffff';
-    const isBlack = frame === 'black';
-
-    // 캔버스 크기: 인생네컷 비율 (1:3.7 정도)
-    const canvasWidth = 800;
+    // 캔버스 크기: SVG viewBox 기준 (900 x 1350)
+    const canvasWidth = 1200;
     const canvasHeight = 1800;
-    const padding = 60;
-    const photoPadding = 20;
-    const photoWidth = canvasWidth - (padding * 2);
-    const photoHeight = (canvasHeight - (padding * 2) - (photoPadding * 3)) / 4;
 
     const canvas = createCanvas(canvasWidth, canvasHeight);
     const ctx = canvas.getContext('2d');
 
-    // 배경 그리기
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    // SVG를 이미지로 변환하여 배경으로 그리기
+    try {
+      const svgBuffer = Buffer.from(frameSvgData);
+      const frameImg = await loadImage(svgBuffer);
+      ctx.drawImage(frameImg, 0, 0, canvasWidth, canvasHeight);
+    } catch (err) {
+      console.log('SVG 배경 로드 실패, 흰색 배경 사용:', err);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    }
+
+    // 4개 이미지 영역 좌표 (SVG clipPath 기준 -> 1200x1800 스케일)
+    const scale = 1200 / 900; // viewBox 900을 1200으로 스케일
+    const photoAreas = [
+      { x: 80.89 * scale, y: 68.90 * scale, width: (439.13 - 80.89) * scale, height: (589.84 - 68.90) * scale },  // 1번
+      { x: 80.89 * scale, y: 615.66 * scale, width: (439.13 - 80.89) * scale, height: (1136.60 - 615.66) * scale }, // 2번
+      { x: 464.98 * scale, y: 70.09 * scale, width: (823.22 - 464.98) * scale, height: (588.69 - 70.09) * scale },   // 3번
+      { x: 464.98 * scale, y: 615.66 * scale, width: (823.22 - 464.98) * scale, height: (1134.26 - 615.66) * scale }  // 4번
+    ];
 
     // 4컷 사진 배치
     for (let i = 0; i < 4; i++) {
@@ -88,29 +93,20 @@ export async function POST(request) {
         const buffer = Buffer.from(base64Data, 'base64');
         const img = await loadImage(buffer);
 
-        const y = padding + (photoHeight + photoPadding) * i;
+        const area = photoAreas[i];
 
-        // 사진 그리기
-        ctx.drawImage(img, padding, y, photoWidth, photoHeight);
+        // 고품질 렌더링
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
-        // 프레임 테두리 (얇은 선)
-        if (isBlack) {
-          ctx.strokeStyle = '#ffffff';
-        } else {
-          ctx.strokeStyle = '#f0f0f0';
-        }
-        ctx.lineWidth = 2;
-        ctx.strokeRect(padding, y, photoWidth, photoHeight);
+        // 사진 그리기 (영역에 맞게 그리기)
+        ctx.drawImage(img, area.x, area.y, area.width, area.height);
+
+        console.log(`✓ Photo ${i + 1} placed at [${Math.round(area.x)}, ${Math.round(area.y)}]`);
       } catch (err) {
         console.error(`Failed to load image ${i}:`, err);
       }
     }
-
-    // 하단에 워터마크 추가
-    ctx.fillStyle = isBlack ? '#ffffff' : '#666666';
-    ctx.font = 'bold 24px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Life Four Cuts', canvasWidth / 2, canvasHeight - 20);
 
     // 이미지 저장
     const buffer = canvas.toBuffer('image/jpeg', { quality: 0.95 });

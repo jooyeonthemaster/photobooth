@@ -30,7 +30,12 @@
       "Bash(git reset:*)",
       "Bash(git fetch:*)",
       "Bash(git branch:*)",
-      "Bash(git remote add:*)"
+      "Bash(git remote add:*)",
+      "Bash(vercel:*)",
+      "Bash(wmic:*)",
+      "Bash(cmd //c:*)",
+      "Bash(powershell:*)",
+      "Bash(\"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe\" /target:exe /out:DnpPrinter.exe DnpPrinter.cs /reference:System.Drawing.dll)"
     ],
     "deny": [],
     "ask": []

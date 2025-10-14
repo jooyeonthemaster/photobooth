@@ -84,3 +84,10 @@ jspm_packages/
 # TernJS port file
 .tern-port
 .vercel
+
+# Temporary print files
+public/temp/
+
+
+
+

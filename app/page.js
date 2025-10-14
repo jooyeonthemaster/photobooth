@@ -1,13 +1,33 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import Webcam from 'react-webcam';
 import './page.css';
+
+// 컴포넌트 imports
+import IntroScreen from './components/IntroScreen';
+import ReadyScreen from './components/ReadyScreen';
+import ShootingScreen from './components/ShootingScreen';
+import SelectScreen from './components/SelectScreen';
+import EditScreen from './components/EditScreen';
+import ResultScreen from './components/ResultScreen';
+import PrintPreviewModal from './components/PrintPreviewModal';
+
+// 상수 imports
+import { filters } from './constants/filters';
+import { frames } from './constants/frames';
+import { videoConstraints } from './constants/camera';
+
+// 유틸 imports
+import { captureAndCropImage, generatePrintPreview } from './utils/imageProcessing';
+import { applyFilter, combinePhotos, printImage as printImageAPI, convertImageUrlToBase64 } from './utils/apiService';
 
 export default function Home() {
   const webcamRef = useRef(null);
   const photosRef = useRef([]);
-  const [step, setStep] = useState('intro'); // intro, frame, shooting, result
+
+  // 상태 관리
+  const [step, setStep] = useState('intro');
   const [selectedFrame, setSelectedFrame] = useState('classic');
   const [capturedPhotos, setCapturedPhotos] = useState([]);
   const [currentShot, setCurrentShot] = useState(0);
@@ -17,70 +37,53 @@ export default function Home() {
   const [selectedFilter, setSelectedFilter] = useState('kpop-idol');
   const [isApplyingFilter, setIsApplyingFilter] = useState(false);
   const [filteredImage, setFilteredImage] = useState(null);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [printPreviewImage, setPrintPreviewImage] = useState(null);
+  const [selectedSlots, setSelectedSlots] = useState([null, null, null, null]);
+  const [isCombining, setIsCombining] = useState(false);
+  const [filteredPhotos, setFilteredPhotos] = useState([]);
+  const [isFilteringAll, setIsFilteringAll] = useState(false);
+  const [previewComposite, setPreviewComposite] = useState(null);
+  const [editingSlotIndex, setEditingSlotIndex] = useState(null);
+  const [slotFilters, setSlotFilters] = useState(['none', 'none', 'none', 'none']);
+  const [showBeforeAfter, setShowBeforeAfter] = useState(false);
 
-  const frames = [
-    { id: 'classic', name: '클래식', color: '#ffffff' },
-    { id: 'pink', name: '핑크', color: '#FFB3D9' },
-    { id: 'blue', name: '블루', color: '#B3D9FF' },
-    { id: 'black', name: '블랙', color: '#2a2a2a' },
-  ];
-
-  const filters = [
-    { id: 'none', name: '필터 없음', emoji: '📷', category: 'basic' },
-    { id: 'kpop-idol', name: 'K-POP 아이돌', emoji: '✨', category: 'beauty' },
-    { id: 'anime-character', name: '애니메이션', emoji: '🎌', category: 'fun' },
-    { id: 'pixar-character', name: '픽사 3D', emoji: '🎬', category: 'fun' },
-    { id: 'zombie-apocalypse', name: '좀비', emoji: '🧟', category: 'horror' },
-    { id: 'cyberpunk-neon', name: '사이버펑크', emoji: '🌃', category: 'cool' },
-    { id: 'vampire-gothic', name: '뱀파이어', emoji: '🧛', category: 'horror' },
-    { id: 'superhero', name: '슈퍼히어로', emoji: '🦸', category: 'cool' },
-    { id: 'alien-invasion', name: '외계인', emoji: '👽', category: 'fun' },
-    { id: 'renaissance-painting', name: '르네상스 명화', emoji: '🖼️', category: 'art' },
-    { id: 'pop-art', name: '팝아트', emoji: '🎨', category: 'art' },
-    { id: 'oil-painting', name: '유화', emoji: '🖌️', category: 'art' },
-    { id: 'glamour-magazine', name: '보그 커버', emoji: '💄', category: 'beauty' },
-    { id: 'instagram-filter', name: '인스타 필터', emoji: '📸', category: 'beauty' },
-    { id: 'drag-queen', name: '드랙퀸', emoji: '👑', category: 'beauty' },
-    { id: 'old-grandparent', name: '80년 후', emoji: '👴', category: 'fun' },
-    { id: 'baby-filter', name: '아기 버전', emoji: '👶', category: 'fun' },
-    { id: 'disney-villain', name: '디즈니 악당', emoji: '😈', category: 'fun' },
-    { id: 'clown-circus', name: '광대', emoji: '🤡', category: 'horror' },
-    { id: 'mermaid-fantasy', name: '인어공주', emoji: '🧜‍♀️', category: 'fantasy' },
-    { id: 'crystal-gem', name: '크리스탈', emoji: '💎', category: 'fantasy' },
-  ];
-
-  const videoConstraints = {
-    width: 1920,
-    height: 1080,
-    facingMode: 'user'
-  };
-
-  // 촬영 시작
-  const startShooting = () => {
+  // ========== 화면 전환 핸들러 ==========
+  const goToReady = () => {
     photosRef.current = [];
     setCapturedPhotos([]);
     setCurrentShot(0);
+    setCountdown(null);
     setCameraReady(false);
-    setStep('shooting');
+    setStep('ready');
   };
 
-  // 카메라 로드 완료
   const handleCameraReady = () => {
     console.log('Camera ready');
     setCameraReady(true);
   };
 
-  // 카메라가 준비되면 촬영 시작
-  useEffect(() => {
-    if (step === 'shooting' && cameraReady) {
-      console.log('Starting countdown');
-      setTimeout(() => takeShot(0), 1000);
+  // ========== 촬영 로직 ==========
+  const startContinuousShooting = () => {
+    if (!cameraReady) {
+      alert('카메라가 준비되지 않았습니다. 잠시만 기다려주세요.');
+      return;
     }
-  }, [step, cameraReady]);
+    photosRef.current = [];
+    setCapturedPhotos([]);
+    setCurrentShot(0);
+    setStep('shooting');
+    takeNextShot(0);
+  };
 
-  // 한 컷 촬영
-  const takeShot = (shotNumber) => {
-    console.log('Taking shot', shotNumber);
+  const takeNextShot = (shotNumber) => {
+    if (shotNumber >= 6) {
+      setStep('select');
+      return;
+    }
+
+    console.log('Taking shot', shotNumber + 1);
     setCurrentShot(shotNumber);
     setCountdown(3);
 
@@ -96,84 +99,174 @@ export default function Home() {
     }, 1000);
   };
 
-  // 이미지 캡처 (1컷만)
-  const captureImage = (shotNumber) => {
-    console.log('Capturing image', shotNumber);
-
-    if (!webcamRef.current) {
-      console.error('Webcam not ready');
-      return;
-    }
-
-    const imageSrc = webcamRef.current.getScreenshot();
-    if (!imageSrc) {
-      console.error('Failed to get screenshot');
-      return;
-    }
-
-    photosRef.current = [imageSrc];
-    setCapturedPhotos([imageSrc]);
-    setStep('preview');
-
-    console.log('Photo captured!');
-  };
-
-  // AI 필터 적용
-  const applyFilter = async () => {
-    if (capturedPhotos.length === 0) return;
-
-    setIsApplyingFilter(true);
-    setFilteredImage(null);
-
+  const captureImage = async (shotNumber) => {
     try {
-      const response = await fetch('/api/apply-filter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image: capturedPhotos[0],
-          filterType: selectedFilter
-        })
-      });
+      const croppedImage = await captureAndCropImage(webcamRef);
+      photosRef.current.push(croppedImage);
+      setCapturedPhotos([...photosRef.current]);
 
-      const data = await response.json();
-
-      if (data.success) {
-        setFilteredImage(data.image);
-      } else {
-        alert('필터 적용 실패: ' + data.message);
-      }
+      setTimeout(() => {
+        takeNextShot(shotNumber + 1);
+      }, 2000);
     } catch (error) {
-      console.error('Filter error:', error);
-      alert('필터 적용 중 오류 발생');
-    } finally {
-      setIsApplyingFilter(false);
+      console.error('캡처 실패:', error);
+      alert('사진 촬영 중 오류가 발생했습니다.');
     }
   };
 
-  // 4컷 합성
-  const createFinalImage = async (photos) => {
-    try {
-      const response = await fetch('/api/combine', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          photos,
-          frame: selectedFrame,
-          filterType: selectedFilter
-        })
-      });
+  // ========== 사진 선택 로직 ==========
+  const selectImageForSlot = (slotIndex, photoIndex) => {
+    const newSlots = [...selectedSlots];
+    newSlots[slotIndex] = photoIndex;
+    setSelectedSlots(newSlots);
+  };
 
-      const data = await response.json();
-      if (data.success) {
-        setFinalImage(data.path);
-        setStep('result');
+  const createPreviewComposite = async () => {
+    if (selectedSlots.includes(null)) {
+      alert('4개의 사진을 모두 선택해주세요!');
+      return;
+    }
+
+    setIsCombining(true);
+
+    try {
+      const selectedPhotos = selectedSlots.map(idx => capturedPhotos[idx]);
+      setFilteredPhotos(selectedPhotos);
+
+      const result = await combinePhotos(selectedPhotos, selectedFrame, 'none');
+
+      if (result.success) {
+        setPreviewComposite(result.path);
+        setStep('edit');
+      } else {
+        alert('합성 실패: ' + result.message);
       }
     } catch (error) {
       console.error('합성 실패:', error);
+      alert('합성 중 오류가 발생했습니다.');
+    } finally {
+      setIsCombining(false);
     }
   };
 
-  // 다운로드
+  // ========== 필터 적용 로직 ==========
+  const applyFilterToSlot = async (slotIndex, filterId) => {
+    setIsApplyingFilter(true);
+    
+    try {
+      const originalPhoto = selectedSlots.map(idx => capturedPhotos[idx])[slotIndex];
+      
+      if (filterId === 'none') {
+        const newFiltered = [...filteredPhotos];
+        newFiltered[slotIndex] = originalPhoto;
+        setFilteredPhotos(newFiltered);
+      } else {
+        const result = await applyFilter(originalPhoto, filterId);
+        
+        if (result.success) {
+          const newFiltered = [...filteredPhotos];
+          newFiltered[slotIndex] = result.image;
+          setFilteredPhotos(newFiltered);
+          
+          const newFilters = [...slotFilters];
+          newFilters[slotIndex] = filterId;
+          setSlotFilters(newFilters);
+        } else {
+          alert('필터 적용 실패: ' + result.message);
+        }
+      }
+
+      await updateComposite();
+    } catch (error) {
+      console.error('필터 적용 오류:', error);
+      alert('필터 적용 중 오류가 발생했습니다.');
+    } finally {
+      setIsApplyingFilter(false);
+      setEditingSlotIndex(null);
+    }
+  };
+
+  const updateComposite = async () => {
+    try {
+      const result = await combinePhotos(filteredPhotos, selectedFrame, 'none');
+      if (result.success) {
+        setPreviewComposite(result.path);
+      }
+    } catch (error) {
+      console.error('합성 업데이트 실패:', error);
+    }
+  };
+
+  const confirmFinalImage = () => {
+    setFinalImage(previewComposite);
+    setStep('result');
+  };
+
+  // ========== 프린터 로직 ==========
+  const handleGeneratePrintPreview = async () => {
+    const imageToPrint = finalImage || filteredImage || (capturedPhotos.length > 0 ? capturedPhotos[0] : null);
+    
+    if (!imageToPrint) {
+      alert('미리보기할 이미지가 없습니다.');
+      return;
+    }
+
+    try {
+      const previewImage = await generatePrintPreview(imageToPrint);
+      setPrintPreviewImage(previewImage);
+      setShowPrintPreview(true);
+    } catch (error) {
+      console.error('미리보기 생성 실패:', error);
+      alert('미리보기 생성 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handlePrintImage = async () => {
+    console.log('🖨️ printImage 함수 시작');
+
+    let imageToPrint;
+
+    if (finalImage) {
+      try {
+        imageToPrint = await convertImageUrlToBase64(finalImage);
+      } catch (err) {
+        console.error('이미지 로드 실패:', err);
+        alert('이미지를 불러올 수 없습니다.');
+        return;
+      }
+    } else {
+      imageToPrint = filteredImage || (capturedPhotos.length > 0 ? capturedPhotos[0] : null);
+    }
+
+    if (!imageToPrint) {
+      console.log('❌ 출력할 이미지 없음');
+      alert('출력할 이미지가 없습니다.');
+      return;
+    }
+
+    console.log('📤 프린터 API 호출 준비');
+    setIsPrinting(true);
+
+    try {
+      const result = await printImageAPI(imageToPrint);
+
+      if (result.success) {
+        console.log('✅ 프린터 출력 성공');
+        alert('✅ DNP 프린터로 출력을 시작했습니다!');
+      } else {
+        console.log('❌ 프린터 출력 실패:', result.message);
+        alert('❌ 출력 실패: ' + result.message);
+      }
+    } catch (error) {
+      console.error('❌ Print error:', error);
+      alert('출력 중 오류가 발생했습니다.');
+    } finally {
+      setIsPrinting(false);
+      console.log('🏁 printImage 함수 종료');
+    }
+  };
+
+  // ========== 기타 핸들러 ==========
   const downloadImage = () => {
     if (!finalImage) return;
     const link = document.createElement('a');
@@ -182,7 +275,6 @@ export default function Home() {
     link.click();
   };
 
-  // 처음으로
   const restart = () => {
     setStep('intro');
     setCapturedPhotos([]);
@@ -190,192 +282,97 @@ export default function Home() {
     setFinalImage(null);
     setFilteredImage(null);
     photosRef.current = [];
-  };
-
-  // 다시 찍기
-  const retake = () => {
-    setCapturedPhotos([]);
-    setFilteredImage(null);
-    photosRef.current = [];
     setCameraReady(false);
-    setStep('shooting');
+    setSelectedSlots([null, null, null, null]);
+    setFilteredPhotos([]);
+    setPreviewComposite(null);
+    setEditingSlotIndex(null);
+    setSlotFilters(['none', 'none', 'none', 'none']);
   };
 
-  // 다운로드
-  const downloadFilteredImage = () => {
-    if (!filteredImage) return;
-    const link = document.createElement('a');
-    link.href = filteredImage;
-    link.download = `filtered_${selectedFilter}_${Date.now()}.jpg`;
-    link.click();
-  };
-
+  // ========== 렌더링 ==========
   return (
     <div className="photobooth">
-      {/* 인트로 화면 */}
-      {step === 'intro' && (
-        <div className="intro-screen">
-          <h1 className="logo">인생네컷</h1>
-          <p className="subtitle">Life Four Cuts</p>
-          <button className="start-btn" onClick={() => setStep('filter')}>
-            시작하기
-          </button>
-        </div>
-      )}
+      {step === 'intro' && <IntroScreen onStart={goToReady} />}
 
-      {/* 필터 선택 */}
-      {step === 'filter' && (
-        <div className="filter-selection">
-          <h2>AI 필터를 선택하세요</h2>
-          <p className="filter-subtitle">완전 미친 창의적인 필터들! 🔥</p>
-
-          <div className="filter-grid">
-            {filters.map(filter => (
-              <div
-                key={filter.id}
-                className={`filter-option ${selectedFilter === filter.id ? 'selected' : ''}`}
-                onClick={() => setSelectedFilter(filter.id)}
-              >
-                <div className="filter-emoji">{filter.emoji}</div>
-                <div className="filter-name">{filter.name}</div>
-              </div>
-            ))}
-          </div>
-
-          <button className="next-btn" onClick={() => setStep('frame')}>
-            다음: 프레임 선택
-          </button>
-        </div>
-      )}
-
-      {/* 프레임 선택 */}
-      {step === 'frame' && (
-        <div className="frame-selection">
-          <h2>프레임을 선택하세요</h2>
-          <div className="frame-grid">
-            {frames.map(frame => (
-              <div
-                key={frame.id}
-                className={`frame-option ${selectedFrame === frame.id ? 'selected' : ''}`}
-                onClick={() => setSelectedFrame(frame.id)}
-                style={{ borderColor: frame.color }}
-              >
-                <div className="frame-preview" style={{ backgroundColor: frame.color }}>
-                  <div className="frame-cuts">
-                    {[1,2,3,4].map(i => (
-                      <div key={i} className="frame-cut"></div>
-                    ))}
-                  </div>
-                </div>
-                <span>{frame.name}</span>
-              </div>
-            ))}
-          </div>
-
-          <button className="next-btn" onClick={startShooting}>
-            촬영 시작
-          </button>
-        </div>
-      )}
-
-      {/* 촬영 화면 */}
-      {step === 'shooting' && (
-        <div className="shooting-screen">
-          <div className="camera-container">
-            <Webcam
-              audio={false}
-              ref={webcamRef}
-              screenshotFormat="image/jpeg"
+      {step === 'ready' && (
+        <ReadyScreen
+          webcamRef={webcamRef}
               videoConstraints={videoConstraints}
-              className="webcam"
-              onUserMedia={handleCameraReady}
-            />
-            {countdown && <div className="countdown-number">{countdown}</div>}
-          </div>
-
-        </div>
+          countdown={countdown}
+          cameraReady={cameraReady}
+          onCameraReady={handleCameraReady}
+          onStartShooting={startContinuousShooting}
+          onBack={() => setStep('intro')}
+        />
       )}
 
-      {/* 프리뷰 화면 */}
-      {step === 'preview' && (
-        <div className="preview-screen">
-          <h2>촬영된 사진</h2>
-
-          <div className="preview-container">
-            <div className="preview-images">
-              <div className="preview-image-box">
-                <h3>원본</h3>
-                {capturedPhotos[0] && (
-                  <img src={capturedPhotos[0]} alt="original" className="preview-img" />
-                )}
-              </div>
-
-              <div className="preview-image-box">
-                <h3>AI 필터 적용 ({filters.find(f => f.id === selectedFilter)?.name})</h3>
-                {filteredImage ? (
-                  <img src={filteredImage} alt="filtered" className="preview-img" />
-                ) : (
-                  <div className="preview-placeholder">
-                    <div className="placeholder-icon">{filters.find(f => f.id === selectedFilter)?.emoji}</div>
-                    <p>필터를 적용해보세요!</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="preview-actions">
-              <button
-                className="apply-filter-btn"
-                onClick={applyFilter}
-                disabled={isApplyingFilter}
-              >
-                {isApplyingFilter ? (
-                  <>
-                    <div className="spinner"></div>
-                    AI 필터 적용 중...
-                  </>
-                ) : (
-                  `✨ ${filters.find(f => f.id === selectedFilter)?.emoji} ${filters.find(f => f.id === selectedFilter)?.name} 필터 적용하기`
-                )}
-              </button>
-
-              {filteredImage && (
-                <button className="download-btn" onClick={downloadFilteredImage}>
-                  📥 다운로드
-                </button>
-              )}
-
-              <button className="retake-btn" onClick={retake}>
-                🔄 다시 찍기
-              </button>
-
-              <button className="restart-btn" onClick={restart}>
-                🏠 처음으로
-              </button>
-            </div>
-          </div>
-        </div>
+      {step === 'shooting' && (
+        <ShootingScreen
+          webcamRef={webcamRef}
+              videoConstraints={videoConstraints}
+          currentShot={currentShot}
+          countdown={countdown}
+          capturedPhotos={capturedPhotos}
+        />
       )}
 
-      {/* 결과 화면 */}
+      {step === 'select' && (
+        <SelectScreen
+          capturedPhotos={capturedPhotos}
+          selectedSlots={selectedSlots}
+          onSelectImage={selectImageForSlot}
+          onCreatePreview={createPreviewComposite}
+          onResetSelection={() => setSelectedSlots([null, null, null, null])}
+          onRetake={() => {
+            setStep('ready');
+            setCapturedPhotos([]);
+            photosRef.current = [];
+            setSelectedSlots([null, null, null, null]);
+          }}
+          isCombining={isCombining}
+        />
+      )}
+
+      {step === 'edit' && (
+        <EditScreen
+          previewComposite={previewComposite}
+          filteredPhotos={filteredPhotos}
+          editingSlotIndex={editingSlotIndex}
+          slotFilters={slotFilters}
+          filters={filters}
+          isApplyingFilter={isApplyingFilter}
+          showBeforeAfter={showBeforeAfter}
+          onSlotClick={(idx) => setEditingSlotIndex(editingSlotIndex === idx ? null : idx)}
+          onApplyFilter={applyFilterToSlot}
+          onConfirm={confirmFinalImage}
+          onBack={() => {
+                setStep('select');
+                setEditingSlotIndex(null);
+                setSlotFilters(['none', 'none', 'none', 'none']);
+              }}
+          onBeforeAfterPress={() => setShowBeforeAfter(true)}
+          onBeforeAfterRelease={() => setShowBeforeAfter(false)}
+        />
+      )}
+
       {step === 'result' && (
-        <div className="result-screen">
-          <h2>촬영 완료!</h2>
-          {finalImage && (
-            <div className="final-image-container">
-              <img src={finalImage} alt="final" className="final-image" />
-            </div>
-          )}
-          <div className="result-actions">
-            <button className="download-btn" onClick={downloadImage}>
-              다운로드
-            </button>
-            <button className="restart-btn" onClick={restart}>
-              처음으로
-            </button>
-          </div>
-        </div>
+        <ResultScreen
+          finalImage={finalImage}
+          onDownload={downloadImage}
+          onPrintPreview={handleGeneratePrintPreview}
+          onPrint={handlePrintImage}
+          onRestart={restart}
+          isPrinting={isPrinting}
+        />
       )}
+
+      <PrintPreviewModal
+        show={showPrintPreview}
+        previewImage={printPreviewImage}
+        onPrint={handlePrintImage}
+        onClose={() => setShowPrintPreview(false)}
+      />
     </div>
   );
 }
