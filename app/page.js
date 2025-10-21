@@ -12,6 +12,7 @@ import SelectScreen from './components/SelectScreen';
 import EditScreen from './components/EditScreen';
 import ResultScreen from './components/ResultScreen';
 import PrintPreviewModal from './components/PrintPreviewModal';
+import FilterTestScreen from './components/FilterTestScreen';
 
 // 상수 imports
 import { filters } from './constants/filters';
@@ -293,7 +294,9 @@ export default function Home() {
   // ========== 렌더링 ==========
   return (
     <div className="photobooth">
-      {step === 'intro' && <IntroScreen onStart={goToReady} />}
+      {step === 'intro' && <IntroScreen onStart={goToReady} onFilterTest={() => setStep('filterTest')} />}
+
+      {step === 'filterTest' && <FilterTestScreen onBack={() => setStep('intro')} />}
 
       {step === 'ready' && (
         <ReadyScreen

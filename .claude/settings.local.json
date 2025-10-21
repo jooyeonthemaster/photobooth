@@ -35,7 +35,8 @@
       "Bash(wmic:*)",
       "Bash(cmd //c:*)",
       "Bash(powershell:*)",
-      "Bash(\"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe\" /target:exe /out:DnpPrinter.exe DnpPrinter.cs /reference:System.Drawing.dll)"
+      "Bash(\"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe\" /target:exe /out:DnpPrinter.exe DnpPrinter.cs /reference:System.Drawing.dll)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
