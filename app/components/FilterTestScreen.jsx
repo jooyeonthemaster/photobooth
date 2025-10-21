@@ -239,15 +239,23 @@ export default function FilterTestScreen({ onBack }) {
           width: 100%;
           min-height: 100vh;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          overflow-y: auto;
+          padding: 20px;
         }
 
         .filter-test-screen {
-          padding: 20px;
           max-width: 1400px;
           margin: 0 auto;
-          min-height: 100vh;
           padding-bottom: 60px;
+        }
+
+        @media (max-width: 768px) {
+          .filter-test-wrapper {
+            padding: 10px;
+          }
+
+          .filter-test-screen {
+            padding-bottom: 40px;
+          }
         }
 
         .test-header {
@@ -255,6 +263,11 @@ export default function FilterTestScreen({ onBack }) {
           align-items: center;
           gap: 20px;
           margin-bottom: 30px;
+        }
+
+        .test-header h2 {
+          color: white;
+          margin: 0;
         }
 
         .back-btn {
@@ -326,6 +339,10 @@ export default function FilterTestScreen({ onBack }) {
           margin: 30px 0;
         }
 
+        .source-image-section h3 {
+          color: white;
+        }
+
         .source-image {
           max-width: 300px;
           max-height: 450px;
@@ -357,6 +374,7 @@ export default function FilterTestScreen({ onBack }) {
           text-align: center;
           margin-bottom: 20px;
           font-size: 24px;
+          color: white;
         }
 
         .filters-grid {
@@ -365,6 +383,24 @@ export default function FilterTestScreen({ onBack }) {
           gap: 15px;
           max-width: 1200px;
           margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+          .filters-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+          }
+
+          .filters-section h3 {
+            font-size: 20px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .filters-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+          }
         }
 
         .filter-btn {
@@ -411,6 +447,11 @@ export default function FilterTestScreen({ onBack }) {
           padding: 40px;
         }
 
+        .processing-section p {
+          color: white;
+          font-size: 18px;
+        }
+
         .spinner {
           width: 50px;
           height: 50px;
@@ -434,6 +475,7 @@ export default function FilterTestScreen({ onBack }) {
           text-align: center;
           font-size: 24px;
           margin-bottom: 30px;
+          color: white;
         }
 
         .duration-badge {
@@ -453,6 +495,16 @@ export default function FilterTestScreen({ onBack }) {
           flex-wrap: wrap;
         }
 
+        @media (max-width: 768px) {
+          .comparison-view {
+            gap: 20px;
+          }
+
+          .arrow {
+            transform: rotate(90deg);
+          }
+        }
+
         .image-box {
           text-align: center;
         }
@@ -468,6 +520,20 @@ export default function FilterTestScreen({ onBack }) {
           max-height: 600px;
           border-radius: 12px;
           border: 2px solid #ddd;
+        }
+
+        @media (max-width: 768px) {
+          .compare-image {
+            max-width: 300px;
+            max-height: 450px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .compare-image {
+            max-width: 90vw;
+            max-height: 500px;
+          }
         }
 
         .arrow {
