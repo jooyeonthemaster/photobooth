@@ -6,12 +6,15 @@ export default function IntroScreen({ onStart, onFilterTest }) {
     <div className="intro-screen">
       <h1 className="logo">📸 Life4Cut</h1>
       <p className="subtitle">당신만의 특별한 네컷 사진</p>
-      {/* <button className="start-btn" onClick={onStart}>
-        시작하기 ✨
-      </button> */}
-      <button className="start-btn" onClick={onFilterTest}>
-        🧪 필터 테스트
-      </button>
+
+      <div className="intro-buttons">
+        <button className="start-btn" onClick={onStart}>
+          시작하기 ✨
+        </button>
+        <button className="filter-test-btn" onClick={onFilterTest}>
+          🧪 필터 테스트
+        </button>
+      </div>
     </div>
   );
 }

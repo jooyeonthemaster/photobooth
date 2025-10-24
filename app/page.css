@@ -11,11 +11,12 @@ body {
 
 .photobooth {
   width: 100vw;
-  min-height: 100vh;
+  height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
 }
 
 /* ========== 인트로 화면 ========== */
@@ -25,18 +26,18 @@ body {
 }
 
 .logo {
-  font-size: 5rem;
+  font-size: 3rem;
   font-weight: 900;
   color: white;
   text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   letter-spacing: -2px;
 }
 
 .subtitle {
-  font-size: 1.5rem;
+  font-size: 1rem;
   color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
   font-weight: 300;
   letter-spacing: 2px;
 }
@@ -45,8 +46,8 @@ body {
   background: white;
   color: #667eea;
   border: none;
-  padding: 1.5rem 4rem;
-  font-size: 1.5rem;
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
   border-radius: 50px;
   cursor: pointer;
@@ -61,6 +62,39 @@ body {
 
 .start-btn:active {
   transform: translateY(-1px);
+}
+
+/* 인트로 버튼 그룹 */
+.intro-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.filter-test-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  padding: 0.85rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.filter-test-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.filter-test-btn:active {
+  transform: translateY(0);
 }
 
 /* ========== 필터 선택 ========== */
@@ -266,32 +300,36 @@ body {
 /* ========== 웹캠 대기 화면 ========== */
 .ready-screen {
   width: 100%;
-  height: 100%;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  gap: 2rem;
+  gap: 1.5rem;
+  padding: 1rem 0;
 }
 
 .ready-controls {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   align-items: center;
+  justify-content: center;
 }
 
 .shoot-btn {
   background: linear-gradient(135deg, #4ade80, #22c55e);
   color: white;
   border: none;
-  padding: 1.5rem 4rem;
-  font-size: 1.5rem;
+  padding: 1.2rem 3rem;
+  font-size: 1.2rem;
   font-weight: 700;
   border-radius: 50px;
   cursor: pointer;
   box-shadow: 0 10px 30px rgba(74, 222, 128, 0.4);
   transition: all 0.3s ease;
+  flex: 1;
+  max-width: 300px;
 }
 
 .shoot-btn:hover:not(:disabled) {
@@ -305,11 +343,11 @@ body {
   background: linear-gradient(135deg, #9ca3af, #6b7280);
 }
 
-.back-btn {
+.ready-controls .back-btn {
   background: rgba(255, 255, 255, 0.2);
   color: white;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  padding: 1rem 2rem;
+  padding: 1.2rem 2rem;
   font-size: 1.1rem;
   font-weight: 600;
   border-radius: 50px;
@@ -345,22 +383,23 @@ body {
 /* ========== 촬영 화면 ========== */
 .shooting-screen {
   width: 100%;
-  height: 100%;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
+  padding: 1rem 0;
 }
 
 .camera-container {
   position: relative;
-  width: 600px;
-  height: 900px;
+  width: min(400px, 90vw);
+  aspect-ratio: 2 / 3;
   border-radius: 30px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .webcam {
@@ -612,37 +651,33 @@ body {
 
 /* ========== 결과 화면 ========== */
 .result-screen {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
   animation: fadeIn 0.8s ease-in;
-}
-
-.result-screen h2 {
-  color: white;
-  font-size: 3rem;
-  margin-bottom: 2rem;
-  font-weight: 700;
+  padding: 2rem;
 }
 
 .final-image-container {
-  background: white;
-  padding: 2rem;
-  border-radius: 30px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  margin-bottom: 2rem;
-  display: inline-block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .final-image {
   max-width: 400px;
   max-height: 800px;
-  border-radius: 15px;
   display: block;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
 .result-actions {
   display: flex;
-  gap: 1.5rem;
   justify-content: center;
+  width: 100%;
+  max-width: 400px;
 }
 
 .download-btn,
@@ -669,20 +704,30 @@ body {
 }
 
 .print-btn {
-  background: #f59e0b;
+  background: linear-gradient(135deg, #4ade80, #22c55e);
   color: white;
-  font-size: 1.2rem;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
   font-weight: 700;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(74, 222, 128, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .print-btn:hover:not(:disabled) {
-  background: #d97706;
   transform: translateY(-3px);
-  box-shadow: 0 12px 35px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 15px 40px rgba(74, 222, 128, 0.5);
 }
 
 .print-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -864,119 +909,283 @@ body {
 
 /* ========== 사진 선택 화면 ========== */
 .select-screen {
-  width: 100%;
+  width: 95vw;
+  height: 95vh;  /* 고정 높이로 변경 */
   max-width: 1400px;
-  padding: 2rem;
+  padding: 0.5rem;
   animation: fadeIn 0.5s ease-in;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;  /* 스크롤 완전히 제거 */
 }
 
 .select-screen h2 {
   color: white;
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  margin: 0 0 0.2rem 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .select-subtitle {
   color: rgba(255, 255, 255, 0.8);
   text-align: center;
-  margin-bottom: 2rem;
-  font-size: 1.1rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 .selection-layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 2rem;
-  margin-bottom: 2rem;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 1rem;
 }
 
-/* 왼쪽: 슬롯 */
-.slots-container {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 1.5rem;
-  border-radius: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-}
-
-.slots-container h3 {
-  color: white;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-.slot-box {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 10px;
-  padding: 0.8rem;
-  margin-bottom: 0.8rem;
-  min-height: 120px;
+/* 왼쪽: 프레임 섹션 */
+.frame-section {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.frame-container {
   position: relative;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 2 / 3;
+}
+
+.frame-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 1;
+}
+
+.frame-slots {
+  position: absolute;
+  top: 5.1%;
+  left: 8.99%;
+  width: 82.47%;
+  height: 80%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1.92% 2.87%;
+  z-index: 2;
+}
+
+.frame-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(200, 200, 200, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.slot-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .slot-number {
   color: white;
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+  font-size: 3rem;
+  font-weight: 900;
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
 }
 
-.slot-image {
+/* 기존 스타일 유지 (EditScreen용) */
+.select-screen .composite-preview {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.select-screen .composite-preview h3 {
+  color: white;
+  font-size: 0.7rem;
+  margin: 0 0 0.4rem 0;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.select-screen .composite-container {
+  position: relative;
   width: 100%;
-  max-width: 200px;
-  height: auto;
-  border-radius: 8px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.select-screen .composite-container > img,
+.select-screen .composite-container > .composite-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 180px;
+  aspect-ratio: 3 / 4;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.select-screen .composite-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.select-screen .composite-overlay {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(4, 1fr);
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+.select-screen .overlay-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.select-screen .overlay-photo {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
 
-.slot-placeholder {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.9rem;
-  text-align: center;
-  padding: 2rem 0;
+.select-screen .slot-label {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
 }
 
 /* 오른쪽: 사진 그리드 */
 .photos-grid {
   background: rgba(255, 255, 255, 0.1);
-  padding: 1.5rem;
-  border-radius: 20px;
+  padding: 0.5rem;
+  border-radius: 12px;
   border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .photos-grid h3 {
   color: white;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
+  font-size: 0.7rem;
+  margin: 0 0 0.4rem 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
-.photos-container {
+/* 오른쪽: 사진 섹션 */
+.photos-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.photos-section h3 {
+  color: white;
+  font-size: 1.2rem;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+}
+
+.photos-grid-2x3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
   gap: 1rem;
+  flex: 1;
 }
 
-.photo-item {
+.photo-card {
   position: relative;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
 }
 
-.photo-item:hover {
+.photo-card:hover {
   transform: scale(1.05);
+  border-color: rgba(255, 179, 217, 0.8);
+  box-shadow: 0 8px 25px rgba(255, 179, 217, 0.4);
+}
+
+.photo-card.selected {
+  border-color: #4ade80;
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.6);
+}
+
+.photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
 }
 
 .photo-thumbnail {
   width: 100%;
-  height: auto;
-  border-radius: 10px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   transition: border-color 0.3s ease;
 }
 
@@ -986,29 +1195,31 @@ body {
 
 .photo-number {
   position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
+  top: 0.4rem;
+  left: 0.4rem;
   background: rgba(0, 0, 0, 0.7);
   color: white;
-  padding: 0.3rem 0.6rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 50%;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
 }
 
 .select-actions {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   justify-content: center;
   flex-wrap: wrap;
+  padding-top: 0.5rem;
+  flex-shrink: 0;
 }
 
 .combine-btn {
   background: linear-gradient(135deg, #4ade80, #22c55e);
   color: white;
   border: none;
-  padding: 1.2rem 3rem;
-  font-size: 1.3rem;
+  padding: 0.7rem 1.8rem;
+  font-size: 0.95rem;
   font-weight: 700;
   border-radius: 50px;
   cursor: pointer;
@@ -1029,19 +1240,19 @@ body {
   cursor: not-allowed;
 }
 
-.reset-btn {
+.reset-btn, .retake-btn {
   background: rgba(255, 255, 255, 0.2);
   color: white;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
+  padding: 0.6rem 1.3rem;
+  font-size: 0.85rem;
   font-weight: 600;
   border-radius: 50px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.reset-btn:hover {
+.reset-btn:hover, .retake-btn:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
 }
@@ -1050,35 +1261,150 @@ body {
 .edit-screen {
   width: 95vw;
   height: 95vh;
-  background: white;
-  border-radius: 24px;
-  padding: 2rem;
+  max-width: 1400px;
+  padding: 0.5rem;
+  animation: fadeIn 0.5s ease-in;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: fadeIn 0.5s ease-in;
+  overflow: hidden;
 }
 
 .edit-screen h2 {
-  color: #667eea;
-  font-size: 2rem;
+  color: white;
+  font-size: 1.1rem;
+  margin: 0 0 0.2rem 0;
   text-align: center;
-  margin-bottom: 0.5rem;
+  flex-shrink: 0;
 }
 
 .edit-subtitle {
+  color: rgba(255, 255, 255, 0.8);
   text-align: center;
-  color: #666;
-  margin-bottom: 2rem;
-  font-size: 1.1rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 .edit-layout {
   display: grid;
-  grid-template-columns: 1.5fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 2rem;
   flex: 1;
+  min-height: 0;
   overflow: hidden;
+  padding: 1rem;
+}
+
+/* EditScreen에서도 frame-section 사용 */
+.edit-screen .frame-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.edit-screen .frame-section h3 {
+  color: white;
+  font-size: 1rem;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+}
+
+.edit-screen .frame-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 2 / 3;
+}
+
+.edit-screen .frame-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 1;
+}
+
+.edit-screen .frame-slots {
+  position: absolute;
+  top: 5.1%;
+  left: 8.99%;
+  width: 82.47%;
+  height: 80%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1.92% 2.87%;
+  z-index: 2;
+}
+
+.edit-screen .frame-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(200, 200, 200, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.edit-screen .frame-slot:hover {
+  outline: 3px solid rgba(102, 126, 234, 0.6);
+  outline-offset: -3px;
+}
+
+.edit-screen .frame-slot.editing {
+  outline: 4px solid #667eea;
+  outline-offset: -4px;
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+}
+
+.edit-screen .slot-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.edit-screen .slot-number {
+  color: white;
+  font-size: 3rem;
+  font-weight: 900;
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+}
+
+.edit-screen .filter-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 1.5rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  z-index: 3;
+}
+
+.edit-screen .editing-indicator {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background: rgba(102, 126, 234, 0.9);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  z-index: 3;
 }
 
 /* 합성 미리보기 */
@@ -1178,19 +1504,21 @@ body {
 
 /* 필터 선택 패널 */
 .filter-panel {
-  background: #f8f9fa;
-  border-radius: 16px;
-  padding: 1.5rem;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 2rem;
+  overflow-y: auto;
 }
 
 .filter-panel h3 {
-  color: #667eea;
-  margin-bottom: 1rem;
-  font-size: 1.2rem;
+  color: white;
+  margin: 0;
+  font-size: 1.1rem;
   text-align: center;
+  font-weight: 600;
 }
 
 .filter-preview-box {
@@ -1210,16 +1538,36 @@ body {
 
 .filter-options-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.8rem;
   overflow-y: auto;
-  max-height: 400px;
-  padding: 0.5rem;
+  flex: 1;
+  padding-right: 0.5rem;
+}
+
+/* 필터 그리드 스크롤바 커스텀 */
+.filter-options-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.filter-options-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.filter-options-grid::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.filter-options-grid::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2, #667eea);
 }
 
 .filter-option-btn {
-  background: white;
-  border: 2px solid #e0e0e0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   padding: 1rem;
   border-radius: 12px;
   cursor: pointer;
@@ -1230,20 +1578,21 @@ body {
   gap: 0.5rem;
 }
 
-.filter-option-btn:hover {
-  border-color: #667eea;
+.filter-option-btn:hover:not(:disabled) {
+  border-color: rgba(102, 126, 234, 0.6);
+  background: rgba(255, 255, 255, 0.15);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
 .filter-option-btn.active {
   border-color: #667eea;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
-.filter-option-btn.active .filter-name {
-  color: white;
+.filter-option-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .filter-option-btn:disabled {
@@ -1252,14 +1601,18 @@ body {
 }
 
 .filter-option-btn .filter-emoji {
-  font-size: 2rem;
+  font-size: 2.5rem;
 }
 
 .filter-option-btn .filter-name {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #333;
+  color: white;
   text-align: center;
+}
+
+.filter-option-btn.active .filter-name {
+  color: white;
 }
 
 .filter-placeholder {
@@ -1268,7 +1621,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #999;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 1.2rem;
   text-align: center;
   gap: 1rem;
@@ -1277,40 +1630,58 @@ body {
 .filter-placeholder p {
   margin: 0;
   line-height: 1.6;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* 편집 액션 버튼 */
 .edit-actions {
   display: flex;
+  gap: 0.5rem;
   justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 2px solid #e0e0e0;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+  flex-shrink: 0;
 }
 
 .confirm-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4ade80, #22c55e);
   color: white;
   border: none;
-  padding: 1.2rem 3rem;
-  border-radius: 16px;
-  font-size: 1.3rem;
+  padding: 0.7rem 1.8rem;
+  font-size: 0.95rem;
   font-weight: 700;
+  border-radius: 50px;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
-.confirm-btn:hover {
+.confirm-btn:hover:not(:disabled) {
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 10px 30px rgba(74, 222, 128, 0.5);
 }
 
 .confirm-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 0.6rem 1.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
 }
 
 /* 로딩 오버레이 */
@@ -1351,4 +1722,120 @@ body {
   font-size: 1.3rem;
   font-weight: 600;
   margin: 0;
+}
+
+/* ========== 출력 성공 모달 ========== */
+.print-success-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+.print-success-modal {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 30px;
+  padding: 3rem 4rem;
+  text-align: center;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5);
+  animation: modalSlideUp 0.4s ease;
+  max-width: 500px;
+}
+
+.success-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  animation: successBounce 0.6s ease;
+}
+
+.print-success-modal h2 {
+  color: white;
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+}
+
+.print-success-modal p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.2rem;
+  margin: 0 0 2rem 0;
+}
+
+.success-animation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.printer-icon {
+  font-size: 3rem;
+  animation: printerShake 0.5s ease infinite;
+}
+
+.dots {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.dots span {
+  color: white;
+  font-size: 2rem;
+  animation: dotBounce 1.4s ease infinite;
+}
+
+.dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes modalSlideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes successBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes printerShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes dotBounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
 }

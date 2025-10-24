@@ -88,6 +88,14 @@ jspm_packages/
 # Temporary print files
 public/temp/
 
+# Photo outputs
+public/photos/
+
+# System files
+nul
+
+
+
 
 
 

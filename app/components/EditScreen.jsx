@@ -2,19 +2,17 @@
 
 // 편집 화면 컴포넌트 (필터 적용)
 export default function EditScreen({
-  previewComposite,
+  capturedPhotos,
+  selectedSlots,
   filteredPhotos,
   editingSlotIndex,
   slotFilters,
   filters,
   isApplyingFilter,
-  showBeforeAfter,
   onSlotClick,
   onApplyFilter,
   onConfirm,
-  onBack,
-  onBeforeAfterPress,
-  onBeforeAfterRelease
+  onBack
 }) {
   return (
     <div className="edit-screen">
@@ -22,66 +20,49 @@ export default function EditScreen({
       <p className="edit-subtitle">사진을 클릭하여 필터를 선택할 수 있습니다</p>
 
       <div className="edit-layout">
-        {/* 왼쪽: 합성된 4컷 미리보기 */}
-        <div className="composite-preview">
+        {/* 왼쪽: 프레임 미리보기 (SelectScreen과 동일) */}
+        <div className="frame-section">
           <h3>현재 미리보기</h3>
-          {previewComposite && (
-            <div className="composite-container">
-              <img
-                src={previewComposite}
-                alt="composite preview"
-                className="composite-image"
-              />
-
-              {/* 각 영역에 클릭 가능한 오버레이 */}
-              <div className="composite-overlay">
-                {[0, 1, 2, 3].map(slotIdx => (
-                  <div
-                    key={slotIdx}
-                    className={`overlay-slot slot-${slotIdx} ${
-                      editingSlotIndex === slotIdx ? 'editing' : ''
-                    }`}
-                    onClick={() => onSlotClick(slotIdx)}
-                  >
-                    <div className="slot-label">
-                      {slotIdx + 1}번
-                      {slotFilters[slotIdx] !== 'none' && (
-                        <span className="filter-badge">
-                          {filters.find(f => f.id === slotFilters[slotIdx])?.emoji}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="frame-container">
+            <img
+              alt="frame"
+              className="frame-background"
+              src="/frame/NEANDER LAB AI PHOTOBOOTH.svg"
+            />
+            <div className="frame-slots">
+              {[0, 1, 2, 3].map(slotIdx => (
+                <div
+                  key={slotIdx}
+                  className={`frame-slot slot-${slotIdx} ${
+                    editingSlotIndex === slotIdx ? 'editing' : ''
+                  }`}
+                  onClick={() => onSlotClick(slotIdx)}
+                >
+                  {selectedSlots[slotIdx] !== null ? (
+                    <img
+                      src={filteredPhotos[slotIdx]}
+                      alt={`slot ${slotIdx + 1}`}
+                      className="slot-photo"
+                    />
+                  ) : (
+                    <div className="slot-number">{slotIdx + 1}</div>
+                  )}
+                  {/* 선택 표시 */}
+                  {editingSlotIndex === slotIdx && (
+                    <div className="editing-indicator">{slotIdx + 1}번</div>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
-
-          {/* 적용 전/후 비교 버튼 */}
-          <button
-            className="before-after-btn"
-            onMouseDown={onBeforeAfterPress}
-            onMouseUp={onBeforeAfterRelease}
-            onMouseLeave={onBeforeAfterRelease}
-            onTouchStart={onBeforeAfterPress}
-            onTouchEnd={onBeforeAfterRelease}
-          >
-            👁️ 길게 눌러서 원본 보기
-          </button>
+          </div>
         </div>
 
         {/* 오른쪽: 필터 선택 패널 */}
         <div className="filter-panel">
           {editingSlotIndex !== null ? (
             <>
-              <h3>{editingSlotIndex + 1}번 사진 필터 선택</h3>
-              <div className="filter-preview-box">
-                <img
-                  src={filteredPhotos[editingSlotIndex]}
-                  alt={`slot ${editingSlotIndex + 1}`}
-                  className="filter-preview-image"
-                />
-              </div>
+              <h3>👆 {editingSlotIndex + 1}번 사진에</h3>
+              <h3>필터를 적용하세요</h3>
               <div className="filter-options-grid">
                 {filters.map(filter => (
                   <button
@@ -115,9 +96,6 @@ export default function EditScreen({
         >
           ✅ 완성하기
         </button>
-        <button className="back-btn" onClick={onBack}>
-          ← 사진 다시 선택
-        </button>
       </div>
 
       {/* 필터 적용 중 로딩 오버레이 */}
@@ -132,8 +110,3 @@ export default function EditScreen({
     </div>
   );
 }
-
-
-
-
-

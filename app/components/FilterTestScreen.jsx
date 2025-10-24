@@ -489,15 +489,17 @@ export default function FilterTestScreen({ onBack }) {
 
         .comparison-view {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: center;
-          gap: 30px;
-          flex-wrap: wrap;
+          gap: 20px;
+          max-width: 100%;
+          padding: 0 20px;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1200px) {
           .comparison-view {
-            gap: 20px;
+            flex-wrap: wrap;
+            gap: 30px;
           }
 
           .arrow {
@@ -507,50 +509,64 @@ export default function FilterTestScreen({ onBack }) {
 
         .image-box {
           text-align: center;
+          flex: 1;
+          max-width: 45%;
+          min-width: 300px;
+        }
+
+        @media (max-width: 1200px) {
+          .image-box {
+            max-width: 100%;
+            width: 100%;
+          }
         }
 
         .image-label {
           font-weight: bold;
           margin-bottom: 10px;
-          font-size: 16px;
+          font-size: 18px;
+          color: white;
         }
 
         .compare-image {
-          max-width: 400px;
-          max-height: 600px;
+          width: 100%;
+          max-width: 100%;
+          height: auto;
+          max-height: 70vh;
+          object-fit: contain;
           border-radius: 12px;
-          border: 2px solid #ddd;
+          border: 3px solid white;
+          background: white;
         }
 
         @media (max-width: 768px) {
           .compare-image {
-            max-width: 300px;
-            max-height: 450px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .compare-image {
-            max-width: 90vw;
-            max-height: 500px;
+            max-height: 60vh;
           }
         }
 
         .arrow {
           font-size: 40px;
-          color: #667eea;
+          color: white;
           font-weight: bold;
+          flex-shrink: 0;
+        }
+
+        @media (max-width: 1200px) {
+          .arrow {
+            font-size: 30px;
+          }
         }
 
         .error-box {
-          width: 400px;
-          height: 400px;
+          width: 100%;
+          min-height: 300px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           background: #ffebee;
-          border: 2px solid #f44336;
+          border: 3px solid #f44336;
           border-radius: 12px;
         }
 

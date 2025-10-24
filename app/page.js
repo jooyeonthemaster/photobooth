@@ -12,6 +12,7 @@ import SelectScreen from './components/SelectScreen';
 import EditScreen from './components/EditScreen';
 import ResultScreen from './components/ResultScreen';
 import PrintPreviewModal from './components/PrintPreviewModal';
+import PrintSuccessModal from './components/PrintSuccessModal';
 import FilterTestScreen from './components/FilterTestScreen';
 
 // 상수 imports
@@ -49,6 +50,7 @@ export default function Home() {
   const [editingSlotIndex, setEditingSlotIndex] = useState(null);
   const [slotFilters, setSlotFilters] = useState(['none', 'none', 'none', 'none']);
   const [showBeforeAfter, setShowBeforeAfter] = useState(false);
+  const [showPrintSuccess, setShowPrintSuccess] = useState(false);
 
   // ========== 화면 전환 핸들러 ==========
   const goToReady = () => {
@@ -253,7 +255,13 @@ export default function Home() {
 
       if (result.success) {
         console.log('✅ 프린터 출력 성공');
-        alert('✅ DNP 프린터로 출력을 시작했습니다!');
+        // 출력 성공 모달 표시
+        setShowPrintSuccess(true);
+        // 2초 후 모달 닫고 처음 화면으로 이동
+        setTimeout(() => {
+          setShowPrintSuccess(false);
+          restart();
+        }, 2000);
       } else {
         console.log('❌ 프린터 출력 실패:', result.message);
         alert('❌ 출력 실패: ' + result.message);
@@ -339,13 +347,13 @@ export default function Home() {
 
       {step === 'edit' && (
         <EditScreen
-          previewComposite={previewComposite}
+          capturedPhotos={capturedPhotos}
+          selectedSlots={selectedSlots}
           filteredPhotos={filteredPhotos}
           editingSlotIndex={editingSlotIndex}
           slotFilters={slotFilters}
           filters={filters}
           isApplyingFilter={isApplyingFilter}
-          showBeforeAfter={showBeforeAfter}
           onSlotClick={(idx) => setEditingSlotIndex(editingSlotIndex === idx ? null : idx)}
           onApplyFilter={applyFilterToSlot}
           onConfirm={confirmFinalImage}
@@ -354,8 +362,6 @@ export default function Home() {
                 setEditingSlotIndex(null);
                 setSlotFilters(['none', 'none', 'none', 'none']);
               }}
-          onBeforeAfterPress={() => setShowBeforeAfter(true)}
-          onBeforeAfterRelease={() => setShowBeforeAfter(false)}
         />
       )}
 
@@ -375,6 +381,11 @@ export default function Home() {
         previewImage={printPreviewImage}
         onPrint={handlePrintImage}
         onClose={() => setShowPrintPreview(false)}
+      />
+
+      <PrintSuccessModal
+        show={showPrintSuccess}
+        onClose={() => setShowPrintSuccess(false)}
       />
     </div>
   );
