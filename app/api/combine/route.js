@@ -125,11 +125,12 @@ export async function POST(request) {
     const filename = `lifefourcut_${Date.now()}.jpg`;
 
     // 🔥 서버리스 환경 대응: /tmp 또는 public/photos 사용
-    const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+    // Vercel에서는 VERCEL_ENV가 항상 설정됨
+    const isServerless = process.env.VERCEL_ENV || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL;
     const photosDir = isServerless
       ? '/tmp'
       : path.join(process.cwd(), 'public', 'photos');
-    console.log('🔵 Photos directory:', photosDir, '(serverless:', isServerless, ')');
+    console.log('🔵 Photos directory:', photosDir, '(serverless:', isServerless, 'VERCEL_ENV:', process.env.VERCEL_ENV, ')');
 
     // 폴더가 없으면 생성 (서버리스가 아닐 때만)
     if (!isServerless) {
