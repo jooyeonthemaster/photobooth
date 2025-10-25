@@ -58,12 +58,13 @@ export default function Home() {
     setCapturedPhotos([]);
     setCurrentShot(0);
     setCountdown(null);
-    setCameraReady(false);
+    // 🔥 카메라 상태 리셋 제거 - 계속 유지
+    // setCameraReady(false);
     setStep('ready');
   };
 
   const handleCameraReady = () => {
-    console.log('Camera ready');
+    console.log('Camera ready - will stay loaded');
     setCameraReady(true);
   };
 
@@ -291,7 +292,8 @@ export default function Home() {
     setFinalImage(null);
     setFilteredImage(null);
     photosRef.current = [];
-    setCameraReady(false);
+    // 🔥 카메라 상태 유지 - 재시작해도 계속 로드된 상태
+    // setCameraReady(false);
     setSelectedSlots([null, null, null, null]);
     setFilteredPhotos([]);
     setPreviewComposite(null);
@@ -309,7 +311,7 @@ export default function Home() {
       {step === 'ready' && (
         <ReadyScreen
           webcamRef={webcamRef}
-              videoConstraints={videoConstraints}
+          videoConstraints={videoConstraints}
           countdown={countdown}
           cameraReady={cameraReady}
           onCameraReady={handleCameraReady}
@@ -321,7 +323,7 @@ export default function Home() {
       {step === 'shooting' && (
         <ShootingScreen
           webcamRef={webcamRef}
-              videoConstraints={videoConstraints}
+          videoConstraints={videoConstraints}
           currentShot={currentShot}
           countdown={countdown}
           capturedPhotos={capturedPhotos}

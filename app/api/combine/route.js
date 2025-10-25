@@ -4,9 +4,12 @@ import path from 'path';
 
 export async function POST(request) {
   try {
+    console.log('🔵 /api/combine - Request received');
     const { photos, frame, filterType } = await request.json();
+    console.log('🔵 Photos count:', photos?.length, 'Frame:', frame, 'Filter:', filterType);
 
     if (!photos || photos.length !== 4) {
+      console.log('❌ Invalid photos count:', photos?.length);
       return NextResponse.json(
         { success: false, message: '4장의 사진이 필요합니다.' },
         { status: 400 }
@@ -52,18 +55,24 @@ export async function POST(request) {
     }
 
     // Canvas를 사용하여 이미지 합성
+    console.log('🔵 Importing canvas package...');
     const { createCanvas, loadImage } = await import('canvas');
+    console.log('✅ Canvas package imported successfully');
 
     // SVG 프레임 로드
     const framePath = path.join(process.cwd(), 'public', 'frame', 'NEANDER LAB AI PHOTOBOOTH.svg');
+    console.log('🔵 Loading frame from:', framePath);
     const frameSvgData = await fs.readFile(framePath, 'utf-8');
+    console.log('✅ Frame loaded, length:', frameSvgData.length);
 
     // 캔버스 크기: SVG viewBox 기준 (900 x 1350)
     const canvasWidth = 1200;
     const canvasHeight = 1800;
 
+    console.log('🔵 Creating canvas:', canvasWidth, 'x', canvasHeight);
     const canvas = createCanvas(canvasWidth, canvasHeight);
     const ctx = canvas.getContext('2d');
+    console.log('✅ Canvas created successfully');
 
     // SVG를 이미지로 변환하여 배경으로 그리기
     try {
@@ -109,33 +118,66 @@ export async function POST(request) {
     }
 
     // 이미지 저장
+    console.log('🔵 Converting canvas to buffer...');
     const buffer = canvas.toBuffer('image/jpeg', { quality: 0.95 });
+    console.log('✅ Buffer created, size:', buffer.length, 'bytes');
+
     const filename = `lifefourcut_${Date.now()}.jpg`;
 
-    const photosDir = path.join(process.cwd(), 'public', 'photos');
+    // 🔥 서버리스 환경 대응: /tmp 또는 public/photos 사용
+    const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+    const photosDir = isServerless
+      ? '/tmp'
+      : path.join(process.cwd(), 'public', 'photos');
+    console.log('🔵 Photos directory:', photosDir, '(serverless:', isServerless, ')');
 
-    // 폴더가 없으면 생성
-    try {
-      await fs.access(photosDir);
-    } catch {
-      await fs.mkdir(photosDir, { recursive: true });
+    // 폴더가 없으면 생성 (서버리스가 아닐 때만)
+    if (!isServerless) {
+      try {
+        await fs.access(photosDir);
+        console.log('✅ Photos directory exists');
+      } catch {
+        console.log('📁 Creating photos directory...');
+        await fs.mkdir(photosDir, { recursive: true });
+        console.log('✅ Photos directory created');
+      }
     }
 
     const filepath = path.join(photosDir, filename);
+    console.log('🔵 Writing file to:', filepath);
     await fs.writeFile(filepath, buffer);
 
-    console.log('✓ 4-cut photo combined:', filename);
+    console.log('✅ 4-cut photo combined:', filename);
+
+    // 🔥 서버리스 환경에서는 Base64로 반환, 로컬은 파일 경로
+    let responsePath;
+    if (isServerless) {
+      console.log('🔵 Converting to Base64 for serverless response...');
+      const base64 = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+      responsePath = base64;
+      console.log('✅ Base64 response prepared');
+    } else {
+      responsePath = `/photos/${filename}`;
+    }
 
     return NextResponse.json({
       success: true,
       message: '4컷 사진 생성 완료!',
       filename: filename,
-      path: `/photos/${filename}`
+      path: responsePath
     });
   } catch (error) {
-    console.error('Combine error:', error);
+    console.error('❌ Combine error:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error name:', error.name);
+    console.error('❌ Error message:', error.message);
     return NextResponse.json(
-      { success: false, message: '합성 실패: ' + error.message },
+      {
+        success: false,
+        message: '합성 실패: ' + error.message,
+        error: error.toString(),
+        stack: error.stack
+      },
       { status: 500 }
     );
   }
