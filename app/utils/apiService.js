@@ -90,14 +90,21 @@ export const printImage = async (image) => {
 
 /**
  * 이미지 URL을 Base64로 변환
- * @param {string} imageUrl - 이미지 URL
+ * @param {string} imageUrl - 이미지 URL 또는 Base64 문자열
  * @returns {Promise<string>} Base64 인코딩된 이미지
  */
 export const convertImageUrlToBase64 = async (imageUrl) => {
   try {
+    // 🔥 이미 Base64 형식이면 그대로 반환
+    if (imageUrl.startsWith('data:image/')) {
+      console.log('✅ 이미 Base64 형식입니다 - 변환 생략');
+      return imageUrl;
+    }
+
+    // URL인 경우에만 fetch하여 변환
     const response = await fetch(imageUrl);
     const blob = await response.blob();
-    
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);

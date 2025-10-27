@@ -11,9 +11,12 @@ export default function IntroScreen({ onStart, onFilterTest }) {
         <button className="start-btn" onClick={onStart}>
           시작하기 ✨
         </button>
-        <button className="filter-test-btn" onClick={onFilterTest}>
+        {/* <a href="/admin" className="admin-link">
+          ⚙️ 필터 설정
+        </a> */}
+        {/* <button className="filter-test-btn" onClick={onFilterTest}>
           🧪 필터 테스트
-        </button>
+        </button> */}
       </div>
     </div>
   );

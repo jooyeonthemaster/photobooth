@@ -132,55 +132,111 @@ export default function Home() {
     }
 
     setIsCombining(true);
+    setIsFilteringAll(true);
 
     try {
-      const selectedPhotos = selectedSlots.map(idx => capturedPhotos[idx]);
-      setFilteredPhotos(selectedPhotos);
+      // localStorage에서 필터 설정 불러오기
+      const savedConfig = localStorage.getItem('photoboothFilters');
 
-      const result = await combinePhotos(selectedPhotos, selectedFrame, 'none');
+      if (!savedConfig) {
+        alert('⚠️ 필터 설정이 없습니다.\n/admin 페이지에서 필터를 설정해주세요.');
+        setIsCombining(false);
+        setIsFilteringAll(false);
+        return;
+      }
+
+      const config = JSON.parse(savedConfig);
+      const slotAssignment = config.slotAssignment; // ['filter1', 'filter2', 'filter3', 'filter4']
+
+      console.log('📋 필터 설정:', slotAssignment);
+
+      // 선택된 원본 사진 4장
+      const selectedPhotos = selectedSlots.map(idx => capturedPhotos[idx]);
+
+      // 🔥 4개 필터 병렬 적용
+      console.log('🎨 필터 적용 시작...');
+      const filterPromises = selectedPhotos.map((photo, index) => {
+        const filterId = slotAssignment[index];
+        console.log(`슬롯 ${index + 1}: ${filterId} 필터 적용 중...`);
+
+        if (filterId === 'none') {
+          return Promise.resolve({ success: true, image: photo });
+        }
+        return applyFilter(photo, filterId);
+      });
+
+      const results = await Promise.all(filterPromises);
+
+      // 실패한 필터가 있는지 확인
+      const failedCount = results.filter(r => !r.success).length;
+      if (failedCount > 0) {
+        console.warn(`⚠️ ${failedCount}개 필터 적용 실패`);
+      }
+
+      // 필터 적용된 이미지 배열 (실패 시 원본 사용)
+      const filtered = results.map((result, index) =>
+        result.success ? result.image : selectedPhotos[index]
+      );
+
+      console.log('✅ 필터 적용 완료');
+      setFilteredPhotos(filtered);
+
+      // 필터 ID 저장
+      setSlotFilters(slotAssignment);
+
+      // 🔥 필터 적용된 이미지로 합성
+      console.log('🖼️ 4컷 합성 시작...');
+      const result = await combinePhotos(filtered, selectedFrame, 'none');
 
       if (result.success) {
+        console.log('✅ 합성 완료');
         setPreviewComposite(result.path);
-        setStep('edit');
+        setFinalImage(result.path); // 🔥 바로 finalImage에 저장
+        setStep('result'); // 🔥 EditScreen 건너뛰고 바로 ResultScreen
       } else {
         alert('합성 실패: ' + result.message);
       }
     } catch (error) {
-      console.error('합성 실패:', error);
-      alert('합성 중 오류가 발생했습니다.');
+      console.error('❌ 필터 적용 또는 합성 실패:', error);
+      alert('처리 중 오류가 발생했습니다: ' + error.message);
     } finally {
       setIsCombining(false);
+      setIsFilteringAll(false);
     }
   };
 
   // ========== 필터 적용 로직 ==========
   const applyFilterToSlot = async (slotIndex, filterId) => {
     setIsApplyingFilter(true);
-    
+
     try {
       const originalPhoto = selectedSlots.map(idx => capturedPhotos[idx])[slotIndex];
-      
+
       if (filterId === 'none') {
         const newFiltered = [...filteredPhotos];
         newFiltered[slotIndex] = originalPhoto;
         setFilteredPhotos(newFiltered);
+
+        // 🔥 업데이트된 배열을 직접 전달하여 즉시 합성
+        await updateComposite(newFiltered);
       } else {
         const result = await applyFilter(originalPhoto, filterId);
-        
+
         if (result.success) {
           const newFiltered = [...filteredPhotos];
           newFiltered[slotIndex] = result.image;
           setFilteredPhotos(newFiltered);
-          
+
           const newFilters = [...slotFilters];
           newFilters[slotIndex] = filterId;
           setSlotFilters(newFilters);
+
+          // 🔥 업데이트된 배열을 직접 전달하여 즉시 합성
+          await updateComposite(newFiltered);
         } else {
           alert('필터 적용 실패: ' + result.message);
         }
       }
-
-      await updateComposite();
     } catch (error) {
       console.error('필터 적용 오류:', error);
       alert('필터 적용 중 오류가 발생했습니다.');
@@ -190,9 +246,11 @@ export default function Home() {
     }
   };
 
-  const updateComposite = async () => {
+  const updateComposite = async (photosToCompose = null) => {
     try {
-      const result = await combinePhotos(filteredPhotos, selectedFrame, 'none');
+      // 전달된 배열이 있으면 사용, 없으면 현재 state 사용
+      const photosArray = photosToCompose || filteredPhotos;
+      const result = await combinePhotos(photosArray, selectedFrame, 'none');
       if (result.success) {
         setPreviewComposite(result.path);
       }

@@ -85,10 +85,10 @@ export default function SelectScreen({
           {isCombining ? (
             <>
               <div className="spinner"></div>
-              필터 선택 화면으로 이동 중...
+              AI 필터 적용 중... 잠시만 기다려주세요
             </>
           ) : (
-            '✨ AI 필터 적용하기'
+            '✨ AI 필터 자동 적용하기'
           )}
         </button>
         <button className="reset-btn" onClick={onResetSelection}>
@@ -98,6 +98,7 @@ export default function SelectScreen({
     </div>
   );
 }
+
 
 
 

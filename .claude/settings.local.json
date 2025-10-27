@@ -37,7 +37,10 @@
       "Bash(powershell:*)",
       "Bash(\"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe\" /target:exe /out:DnpPrinter.exe DnpPrinter.cs /reference:System.Drawing.dll)",
       "Bash(npm run build:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(curl:*)",
+      "Bash(explorer \"c:\\Users\\jooye\\Desktop\\20251005photo\\.next\\standalone\")",
+      "Bash(wc -l app/**/*.{js,jsx,css})"
     ],
     "deny": [],
     "ask": []

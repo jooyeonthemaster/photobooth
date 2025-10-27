@@ -65,9 +65,10 @@ export async function POST(request) {
     const frameSvgData = await fs.readFile(framePath, 'utf-8');
     console.log('✅ Frame loaded, length:', frameSvgData.length);
 
-    // 캔버스 크기: SVG viewBox 기준 (900 x 1350)
-    const canvasWidth = 1200;
-    const canvasHeight = 1800;
+    // 캔버스 크기: 4x6 inch 인화 기준 (메모리 절약)
+    // 8GB RAM 환경에서도 안정적으로 작동하도록 크기 축소
+    const canvasWidth = 800;
+    const canvasHeight = 1200;
 
     console.log('🔵 Creating canvas:', canvasWidth, 'x', canvasHeight);
     const canvas = createCanvas(canvasWidth, canvasHeight);
@@ -85,8 +86,8 @@ export async function POST(request) {
       ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     }
 
-    // 4개 이미지 영역 좌표 (SVG clipPath 기준 -> 1200x1800 스케일)
-    const scale = 1200 / 900; // viewBox 900을 1200으로 스케일
+    // 4개 이미지 영역 좌표 (SVG clipPath 기준 -> 800x1200 스케일)
+    const scale = 800 / 900; // viewBox 900을 800으로 스케일
     const photoAreas = [
       { x: 80.89 * scale, y: 68.90 * scale, width: (439.13 - 80.89) * scale, height: (589.84 - 68.90) * scale },  // 1번
       { x: 80.89 * scale, y: 615.66 * scale, width: (439.13 - 80.89) * scale, height: (1136.60 - 615.66) * scale }, // 2번
@@ -150,16 +151,11 @@ export async function POST(request) {
 
     console.log('✅ 4-cut photo combined:', filename);
 
-    // 🔥 서버리스 환경에서는 Base64로 반환, 로컬은 파일 경로
-    let responsePath;
-    if (isServerless) {
-      console.log('🔵 Converting to Base64 for serverless response...');
-      const base64 = `data:image/jpeg;base64,${buffer.toString('base64')}`;
-      responsePath = base64;
-      console.log('✅ Base64 response prepared');
-    } else {
-      responsePath = `/photos/${filename}`;
-    }
+    // 🔥 Standalone 빌드도 public 폴더 static 서빙 안 되므로 항상 Base64 반환
+    console.log('🔵 Converting to Base64 for response...');
+    const base64 = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+    const responsePath = base64;
+    console.log('✅ Base64 response prepared');
 
     return NextResponse.json({
       success: true,

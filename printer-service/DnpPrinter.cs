@@ -82,8 +82,8 @@ namespace DnpPrinterService
             // 여백 제거
             pd.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
 
-            // Landscape 모드 설정 (윈도우 이미지 편집기와 동일)
-            pd.DefaultPageSettings.Landscape = true;
+            // Portrait 모드 설정 (세로 방향 출력 - 800x1200 이미지용)
+            pd.DefaultPageSettings.Landscape = false;
 
             Console.WriteLine("=== 프린터 설정 ===");
             Console.WriteLine("용지 크기: " + pd.DefaultPageSettings.PaperSize.PaperName);
