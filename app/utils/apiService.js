@@ -1,6 +1,43 @@
 // API 호출 서비스
 
 /**
+ * 이미지를 압축하여 Base64 크기 줄이기
+ * @param {string} base64Image - Base64 인코딩된 이미지
+ * @param {number} maxWidth - 최대 너비 (기본값: 1200px)
+ * @param {number} quality - JPEG 품질 (0.0 ~ 1.0, 기본값: 0.7)
+ * @returns {Promise<string>} 압축된 Base64 이미지
+ */
+const compressImage = async (base64Image, maxWidth = 1200, quality = 0.7) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // 원본 크기
+      let width = img.width;
+      let height = img.height;
+
+      // 최대 너비 초과 시 리사이즈
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+
+      // Canvas에 그려서 압축
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // JPEG로 압축하여 Base64 반환
+      const compressed = canvas.toDataURL('image/jpeg', quality);
+      resolve(compressed);
+    };
+    img.onerror = reject;
+    img.src = base64Image;
+  });
+};
+
+/**
  * AI 필터를 이미지에 적용
  * @param {string} image - Base64 인코딩된 이미지
  * @param {string} filterType - 필터 타입 ID
@@ -18,6 +55,22 @@ export const applyFilter = async (image, filterType) => {
     });
 
     const data = await response.json();
+
+    // 필터 적용 성공 시 이미지 압축
+    if (data.success && data.image) {
+      console.log('🗜️ 필터 결과 압축 중...');
+      const originalSize = data.image.length;
+      const compressed = await compressImage(data.image, 1200, 0.7);
+      const compressedSize = compressed.length;
+      const reduction = ((1 - compressedSize / originalSize) * 100).toFixed(1);
+      console.log(`✅ 압축 완료: ${(originalSize / 1024).toFixed(0)}KB → ${(compressedSize / 1024).toFixed(0)}KB (${reduction}% 감소)`);
+
+      return {
+        ...data,
+        image: compressed
+      };
+    }
+
     return data;
   } catch (error) {
     console.error('Filter error:', error);
