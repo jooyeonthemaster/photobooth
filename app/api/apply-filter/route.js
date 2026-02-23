@@ -603,9 +603,11 @@ export async function POST(request) {
     }
 
     let fullPrompt;
+    let filterName;
 
     // 🔥 PIN 모드 (acscent-composite): 참조 이미지 합성 전용 - 아트 스타일 필터 없음
     if (filterType === 'acscent-composite' && customerData && referenceImageUrl) {
+      filterName = 'AC\'SCENT Composite';
       fullPrompt = buildReferencePrompt('', customerData);
       fullPrompt += `
 
@@ -621,6 +623,7 @@ CRITICAL INSTRUCTIONS:
     } else {
       // 🎨 일반 필터 모드: admin에서 설정한 아트 스타일 필터 적용
       const filter = FILTER_PROMPTS[filterType] || FILTER_PROMPTS['kpop-idol'];
+      filterName = filter.name;
       fullPrompt = filter.prompt;
       fullPrompt += `
 
@@ -671,7 +674,7 @@ CRITICAL INSTRUCTIONS:
     // Gemini 3 Pro Image 모델 사용
     const model = "gemini-3-pro-image-preview";
 
-    console.log(`[Filter] Applying ${filter.name} filter with ${model}...`);
+    console.log(`[Filter] Applying ${filterName} filter with ${model}...`);
 
     // 재시도 로직 (최대 2회)
     let response;
@@ -714,8 +717,8 @@ CRITICAL INSTRUCTIONS:
           return NextResponse.json({
             success: true,
             image: filteredImage,
-            filterName: filter.name,
-            message: `${filter.name} 필터가 적용되었습니다! (Gemini 3 Pro Image)`
+            filterName: filterName,
+            message: `${filterName} 필터가 적용되었습니다! (Gemini 3 Pro Image)`
           });
         }
       }
