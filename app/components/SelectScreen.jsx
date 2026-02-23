@@ -8,12 +8,35 @@ export default function SelectScreen({
   onCreatePreview,
   onResetSelection,
   onRetake,
-  isCombining
+  isCombining,
+  customerData,
+  referenceImageUrl
 }) {
   return (
     <div className="select-screen">
       <h2>4개의 사진을 선택하세요</h2>
       <p className="select-subtitle">원하는 사진을 클릭하여 4개 슬롯에 배치하세요</p>
+
+      {/* AC'SCENT 참조 이미지 배너 */}
+      {customerData && (
+        <div className="acscent-banner">
+          <div className="acscent-banner-content">
+            {referenceImageUrl && (
+              <img
+                src={referenceImageUrl}
+                alt="향수 프로필"
+                className="acscent-ref-thumb"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            )}
+            <div className="acscent-banner-text">
+              <span className="acscent-badge">AC'SCENT</span>
+              <strong>{customerData.idolName}</strong>
+              <span className="acscent-perfume">{customerData.perfumeName}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="selection-layout">
         {/* 왼쪽: 프레임 미리보기 */}
@@ -85,10 +108,15 @@ export default function SelectScreen({
           {isCombining ? (
             <>
               <div className="spinner"></div>
-              AI 필터 적용 중... 잠시만 기다려주세요
+              {customerData
+                ? 'AC\'SCENT 향수 프로필 + AI 필터 합성 중...'
+                : 'AI 필터 적용 중... 잠시만 기다려주세요'
+              }
             </>
           ) : (
-            '✨ AI 필터 자동 적용하기'
+            customerData
+              ? '✨ AC\'SCENT + AI 필터 합성하기'
+              : '✨ AI 필터 자동 적용하기'
           )}
         </button>
         <button className="reset-btn" onClick={onResetSelection}>
@@ -98,11 +126,3 @@ export default function SelectScreen({
     </div>
   );
 }
-
-
-
-
-
-
-
-

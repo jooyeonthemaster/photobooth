@@ -3,20 +3,33 @@
 // 인트로 시작 화면 컴포넌트
 export default function IntroScreen({ onStart, onFilterTest }) {
   return (
-    <div className="intro-screen">
-      <h1 className="logo">📸 Life4Cut</h1>
-      <p className="subtitle">당신만의 특별한 네컷 사진</p>
-
-      <div className="intro-buttons">
-        <button className="start-btn" onClick={onStart}>
-          시작하기 ✨
-        </button>
-        {/* <a href="/admin" className="admin-link">
-          ⚙️ 필터 설정
-        </a> */}
-        {/* <button className="filter-test-btn" onClick={onFilterTest}>
-          🧪 필터 테스트
-        </button> */}
+    <div className="intro-screen robot-theme">
+      <div className="robot-container">
+        <div className="robot-head">
+          <div className="robot-ear left"></div>
+          <div className="robot-ear right"></div>
+          <div className="robot-face" onClick={onStart}>
+            <div className="robot-eyes">
+              <div className="robot-eye">
+                <div className="robot-pupil">
+                  <div className="robot-sparkle"></div>
+                </div>
+              </div>
+              <div className="robot-eye">
+                <div className="robot-pupil">
+                  <div className="robot-sparkle"></div>
+                </div>
+              </div>
+            </div>
+            <div className="robot-blush left"></div>
+            <div className="robot-blush right"></div>
+            <div className="robot-mouth-container">
+              <button className="robot-mouth-btn">
+                <span>START</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

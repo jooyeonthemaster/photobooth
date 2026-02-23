@@ -41,17 +41,29 @@ const compressImage = async (base64Image, maxWidth = 1200, quality = 0.7) => {
  * AI 필터를 이미지에 적용
  * @param {string} image - Base64 인코딩된 이미지
  * @param {string} filterType - 필터 타입 ID
+ * @param {string} [referenceImageUrl] - AC'SCENT 참조 이미지 URL (선택)
+ * @param {object} [customerData] - 고객 향수 프로필 데이터 (선택)
  * @returns {Promise<{success: boolean, image?: string, message?: string}>}
  */
-export const applyFilter = async (image, filterType) => {
+export const applyFilter = async (image, filterType, referenceImageUrl = null, customerData = null) => {
   try {
+    const body = {
+      image: image,
+      filterType: filterType
+    };
+
+    // AC'SCENT 참조 이미지가 있으면 포함
+    if (referenceImageUrl) {
+      body.referenceImageUrl = referenceImageUrl;
+    }
+    if (customerData) {
+      body.customerData = customerData;
+    }
+
     const response = await fetch('/api/apply-filter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        image: image,
-        filterType: filterType
-      })
+      body: JSON.stringify(body)
     });
 
     const data = await response.json();

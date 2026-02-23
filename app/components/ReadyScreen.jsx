@@ -41,6 +41,14 @@ export default function ReadyScreen({
 
   return (
     <div className="ready-screen">
+      <div className="ready-robot-eyes">
+        <div className="pin-robot-eye">
+          <div className="pin-robot-pupil"></div>
+        </div>
+        <div className="pin-robot-eye">
+          <div className="pin-robot-pupil"></div>
+        </div>
+      </div>
       <div className="camera-container">
         <Webcam
           audio={false}
@@ -98,6 +106,7 @@ export default function ReadyScreen({
     </div>
   );
 }
+
 
 
 

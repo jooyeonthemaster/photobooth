@@ -5,6 +5,85 @@ const genAI = new GoogleGenAI({
   apiKey: process.env.GOOGLE_GEMINI_API_KEY
 });
 
+// 참조 이미지 기반 합성 프롬프트 생성
+function buildReferencePrompt(filterPrompt, customerData) {
+  const { idolName, perfumeName, perfumeBrand, scentProfile, traits } = customerData;
+
+  // 향수 프로필에서 분위기 키워드 추출
+  const topNotes = scentProfile?.topNote || '';
+  const middleNotes = scentProfile?.middleNote || '';
+  const baseNotes = scentProfile?.baseNote || '';
+  const scentKeywords = [topNotes, middleNotes, baseNotes].filter(Boolean).join(', ');
+
+  // 특성 점수에서 상위 3개 추출
+  const topTraits = Object.entries(traits || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([key]) => key);
+
+  return `
+You are an expert photo compositor and digital artist. You will receive TWO images:
+- IMAGE 1 (FIRST): The SUBJECT — a real person's photo. This is the main person to feature.
+- IMAGE 2 (SECOND): The REFERENCE CHARACTER — "${idolName}". This could be an anime character, illustrated character, or a real person.
+
+YOUR TASK: Create a single, cohesive composite image where the SUBJECT and the REFERENCE CHARACTER appear TOGETHER naturally.
+
+=== REFERENCE CHARACTER ANALYSIS ===
+Analyze the SECOND image carefully to determine its type:
+
+IF the reference is an ANIME/ILLUSTRATED CHARACTER:
+- Transform the SUBJECT into the SAME anime/illustration art style as the reference character
+- Both the subject and the reference character must appear in the SAME unified art style
+- The subject should look like they belong in the same anime/manga/illustration world
+- Preserve the subject's key facial features (face shape, eyes, hairstyle) but render them in the matching art style
+- Place them together in a natural pose — side by side, interacting, or in a scene that feels organic
+- The background should match the anime/illustration world's aesthetic
+
+IF the reference is a REAL PERSON or REALISTIC ILLUSTRATION:
+- Keep the SUBJECT photorealistic — preserve their exact facial features, skin tone, and appearance with high fidelity
+- Place the subject and the reference character together in a natural, candid-looking composition
+- They should appear to be posing together naturally — like friends taking a photo, standing side by side, or in a casual interaction
+- The lighting, color grading, and shadows must be consistent across both people
+- The background should reflect the perfume's mood and atmosphere
+
+=== SCENT PERSONALITY CONTEXT ===
+Use this to guide the overall MOOD, COLOR PALETTE, and BACKGROUND atmosphere:
+- Character: ${idolName}
+- Perfume: ${perfumeName}${perfumeBrand ? ` by ${perfumeBrand}` : ''}
+- Scent Notes: ${scentKeywords || 'floral, woody'}
+- Personality Traits: ${topTraits.join(', ') || 'elegant, warm'}
+
+The background and atmosphere should evoke the feeling of these scent notes —
+for example, floral notes suggest gardens/petals, woody notes suggest warm forests/amber lighting,
+citrus suggests bright/fresh environments, musk suggests intimate/luxurious settings.
+
+=== ORIGINAL FILTER STYLE ===
+Additionally, incorporate the following artistic filter style into the overall composition:
+${filterPrompt}
+
+=== CRITICAL RULES ===
+1. The SUBJECT's face must be clearly recognizable — preserve their exact facial structure, eyes, nose, mouth, and distinctive features
+2. The REFERENCE CHARACTER ("${idolName}") must ALSO appear in the image — this is a TWO-PERSON composite
+3. Both figures should look like they naturally belong in the same scene
+4. Output must be a single cohesive image, not a collage or split screen
+5. High quality, detailed output with consistent lighting and perspective
+6. The composition should feel like a real moment captured — natural posing, natural interaction
+`;
+}
+
+// 참조 이미지를 URL에서 Base64로 가져오기
+async function fetchImageAsBase64(imageUrl) {
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const buffer = await response.arrayBuffer();
+    return Buffer.from(buffer).toString('base64');
+  } catch (error) {
+    console.error('[fetchImageAsBase64] Error:', error.message);
+    return null;
+  }
+}
+
 // 원본 인물 보존형 필터 프롬프트들
 const FILTER_PROMPTS = {
   'kpop-idol': {
@@ -511,7 +590,7 @@ MODIFY: Only makeup, scale effects, glitter, lighting, mermaid accessories, and 
 
 export async function POST(request) {
   try {
-    const { image, filterType } = await request.json();
+    const { image, filterType, referenceImageUrl, customerData } = await request.json();
 
     if (!image) {
       return NextResponse.json(
@@ -522,8 +601,15 @@ export async function POST(request) {
 
     const filter = FILTER_PROMPTS[filterType] || FILTER_PROMPTS['kpop-idol'];
 
-    const fullPrompt = `
-${filter.prompt}
+    // 참조 이미지가 있으면 향수 프로필 기반 프롬프트 구성
+    let fullPrompt;
+    if (customerData && referenceImageUrl) {
+      fullPrompt = buildReferencePrompt(filter.prompt, customerData);
+    } else {
+      fullPrompt = filter.prompt;
+    }
+
+    fullPrompt += `
 
 CRITICAL INSTRUCTIONS:
 - You MUST generate and return a new edited image, NOT text
@@ -540,22 +626,44 @@ CRITICAL INSTRUCTIONS:
     // 이미지 데이터 추출
     const imageData = image.replace(/^data:image\/[a-z]+;base64,/, "");
 
-    // Gemini API 호출
-    const model = "gemini-2.5-flash-image-preview";
-    const contents = [
-      { text: fullPrompt },
-      {
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: imageData,
-        },
-      },
-    ];
+    // contents 구성 - 참조 이미지 포함 여부에 따라 분기
+    const contents = [{ text: fullPrompt }];
 
-    console.log(`Applying ${filter.name} filter...`);
+    // 촬영한 사진 (메인)
+    contents.push({
+      inlineData: {
+        mimeType: "image/jpeg",
+        data: imageData,
+      },
+    });
+
+    // 참조 이미지가 있으면 추가 (Gemini 3 Pro는 최대 14개 참조 이미지 지원)
+    if (referenceImageUrl) {
+      console.log(`[Filter] Fetching reference image from AC'SCENT...`);
+      const refImageBase64 = await fetchImageAsBase64(referenceImageUrl);
+      if (refImageBase64) {
+        contents.push({
+          inlineData: {
+            mimeType: "image/jpeg",
+            data: refImageBase64,
+          },
+        });
+        console.log(`[Filter] Reference image added to prompt`);
+      } else {
+        console.warn(`[Filter] Failed to fetch reference image, proceeding without it`);
+      }
+    }
+
+    // Gemini 3 Pro Image 모델 사용
+    const model = "gemini-3-pro-image-preview";
+
+    console.log(`[Filter] Applying ${filter.name} filter with ${model}...`);
     const response = await genAI.models.generateContent({
       model: model,
       contents: contents,
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+      },
     });
 
     // 생성된 이미지 추출
@@ -568,7 +676,7 @@ CRITICAL INSTRUCTIONS:
             success: true,
             image: filteredImage,
             filterName: filter.name,
-            message: `${filter.name} 필터가 적용되었습니다!`
+            message: `${filter.name} 필터가 적용되었습니다! (Gemini 3 Pro Image)`
           });
         }
       }

@@ -6,6 +6,7 @@ import './page.css';
 
 // 컴포넌트 imports
 import IntroScreen from './components/IntroScreen';
+import PinScreen from './components/PinScreen';
 import ReadyScreen from './components/ReadyScreen';
 import ShootingScreen from './components/ShootingScreen';
 import SelectScreen from './components/SelectScreen';
@@ -51,6 +52,29 @@ export default function Home() {
   const [slotFilters, setSlotFilters] = useState(['none', 'none', 'none', 'none']);
   const [showBeforeAfter, setShowBeforeAfter] = useState(false);
   const [showPrintSuccess, setShowPrintSuccess] = useState(false);
+
+  // AC'SCENT 연동 상태
+  const [customerData, setCustomerData] = useState(null); // PIN으로 조회된 고객 데이터
+  const [referenceImageUrl, setReferenceImageUrl] = useState(null); // 참조 이미지 URL
+
+  // ========== PIN 관련 핸들러 ==========
+  const goToPin = () => {
+    setStep('pin');
+  };
+
+  const handlePinVerified = (data) => {
+    console.log('✅ PIN 인증 완료:', data.idolName);
+    setCustomerData(data);
+    setReferenceImageUrl(data.userImageUrl || null);
+    goToReady();
+  };
+
+  const handlePinSkip = () => {
+    console.log('⏭️ PIN 없이 진행');
+    setCustomerData(null);
+    setReferenceImageUrl(null);
+    goToReady();
+  };
 
   // ========== 화면 전환 핸들러 ==========
   const goToReady = () => {
@@ -153,8 +177,11 @@ export default function Home() {
       // 선택된 원본 사진 4장
       const selectedPhotos = selectedSlots.map(idx => capturedPhotos[idx]);
 
-      // 🔥 4개 필터 병렬 적용
+      // 🔥 4개 필터 병렬 적용 (AC'SCENT 참조 이미지 포함)
       console.log('🎨 필터 적용 시작...');
+      if (referenceImageUrl) {
+        console.log('🔗 AC\'SCENT 참조 이미지 포함:', referenceImageUrl);
+      }
       const filterPromises = selectedPhotos.map((photo, index) => {
         const filterId = slotAssignment[index];
         console.log(`슬롯 ${index + 1}: ${filterId} 필터 적용 중...`);
@@ -162,7 +189,7 @@ export default function Home() {
         if (filterId === 'none') {
           return Promise.resolve({ success: true, image: photo });
         }
-        return applyFilter(photo, filterId);
+        return applyFilter(photo, filterId, referenceImageUrl, customerData);
       });
 
       const results = await Promise.all(filterPromises);
@@ -357,12 +384,23 @@ export default function Home() {
     setPreviewComposite(null);
     setEditingSlotIndex(null);
     setSlotFilters(['none', 'none', 'none', 'none']);
+    // AC'SCENT 연동 데이터 초기화
+    setCustomerData(null);
+    setReferenceImageUrl(null);
   };
 
   // ========== 렌더링 ==========
   return (
     <div className="photobooth">
-      {step === 'intro' && <IntroScreen onStart={goToReady} onFilterTest={() => setStep('filterTest')} />}
+      {step === 'intro' && <IntroScreen onStart={goToPin} onFilterTest={() => setStep('filterTest')} />}
+
+      {step === 'pin' && (
+        <PinScreen
+          onPinVerified={handlePinVerified}
+          onSkip={handlePinSkip}
+          onBack={() => setStep('intro')}
+        />
+      )}
 
       {step === 'filterTest' && <FilterTestScreen onBack={() => setStep('intro')} />}
 
@@ -402,6 +440,8 @@ export default function Home() {
             setSelectedSlots([null, null, null, null]);
           }}
           isCombining={isCombining}
+          customerData={customerData}
+          referenceImageUrl={referenceImageUrl}
         />
       )}
 
