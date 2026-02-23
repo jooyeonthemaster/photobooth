@@ -159,44 +159,57 @@ export default function Home() {
     setIsFilteringAll(true);
 
     try {
-      // localStorage에서 필터 설정 불러오기
-      const savedConfig = localStorage.getItem('photoboothFilters');
-
-      if (!savedConfig) {
-        alert('⚠️ 필터 설정이 없습니다.\n/admin 페이지에서 필터를 설정해주세요.');
-        setIsCombining(false);
-        setIsFilteringAll(false);
-        return;
-      }
-
-      const config = JSON.parse(savedConfig);
-      const slotAssignment = config.slotAssignment; // ['filter1', 'filter2', 'filter3', 'filter4']
-
-      console.log('📋 필터 설정:', slotAssignment);
-
       // 선택된 원본 사진 4장
       const selectedPhotos = selectedSlots.map(idx => capturedPhotos[idx]);
 
-      // 🔥 4개 필터 순차 적용 (병렬 시 Gemini API rate limit 방지)
-      console.log('🎨 필터 적용 시작...');
-      if (referenceImageUrl) {
-        console.log('🔗 AC\'SCENT 참조 이미지 포함:', referenceImageUrl);
-      }
-
+      // 🔥 PIN 모드 vs 일반 모드 완전 분기
+      const isPinMode = !!(referenceImageUrl && customerData);
       const results = [];
-      for (let index = 0; index < selectedPhotos.length; index++) {
-        const photo = selectedPhotos[index];
-        const filterId = slotAssignment[index];
-        console.log(`슬롯 ${index + 1}: ${filterId} 필터 적용 중...`);
 
-        if (filterId === 'none') {
-          results.push({ success: true, image: photo });
-        } else {
-          const result = await applyFilter(photo, filterId, referenceImageUrl, customerData);
+      if (isPinMode) {
+        // ===== PIN 모드: 참조 이미지 합성만 (admin 필터 완전 무시) =====
+        console.log('🔗 AC\'SCENT PIN 모드 - 참조 이미지 합성 전용');
+        console.log('🔗 참조 이미지:', referenceImageUrl);
+        console.log('🔗 캐릭터:', customerData.idolName);
+
+        for (let index = 0; index < selectedPhotos.length; index++) {
+          const photo = selectedPhotos[index];
+          console.log(`슬롯 ${index + 1}: 참조 이미지 합성 중...`);
+
+          const result = await applyFilter(photo, 'acscent-composite', referenceImageUrl, customerData);
           results.push(result);
-          // API rate limit 방지를 위한 딜레이
           if (index < selectedPhotos.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+      } else {
+        // ===== 일반 모드: admin 필터 설정 사용 (참조 이미지 없음) =====
+        const savedConfig = localStorage.getItem('photoboothFilters');
+
+        if (!savedConfig) {
+          alert('⚠️ 필터 설정이 없습니다.\n/admin 페이지에서 필터를 설정해주세요.');
+          setIsCombining(false);
+          setIsFilteringAll(false);
+          return;
+        }
+
+        const config = JSON.parse(savedConfig);
+        const slotAssignment = config.slotAssignment;
+        console.log('🎨 일반 모드 - 필터 설정:', slotAssignment);
+
+        for (let index = 0; index < selectedPhotos.length; index++) {
+          const photo = selectedPhotos[index];
+          const filterId = slotAssignment[index];
+          console.log(`슬롯 ${index + 1}: ${filterId} 필터 적용 중...`);
+
+          if (filterId === 'none') {
+            results.push({ success: true, image: photo });
+          } else {
+            const result = await applyFilter(photo, filterId, null, null);
+            results.push(result);
+            if (index < selectedPhotos.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
           }
         }
       }
@@ -204,7 +217,7 @@ export default function Home() {
       // 실패한 필터가 있는지 확인
       const failedCount = results.filter(r => !r.success).length;
       if (failedCount > 0) {
-        console.warn(`⚠️ ${failedCount}개 필터 적용 실패`);
+        console.warn(`⚠️ ${failedCount}개 적용 실패`);
       }
 
       // 필터 적용된 이미지 배열 (실패 시 원본 사용)
@@ -212,13 +225,14 @@ export default function Home() {
         result.success ? result.image : selectedPhotos[index]
       );
 
-      console.log('✅ 필터 적용 완료');
+      console.log('✅ 처리 완료');
       setFilteredPhotos(filtered);
+      setSlotFilters(isPinMode
+        ? ['acscent-composite', 'acscent-composite', 'acscent-composite', 'acscent-composite']
+        : (JSON.parse(localStorage.getItem('photoboothFilters'))?.slotAssignment || ['none','none','none','none'])
+      );
 
-      // 필터 ID 저장
-      setSlotFilters(slotAssignment);
-
-      // 🔥 필터 적용된 이미지로 합성
+      // 🔥 4컷 합성
       console.log('🖼️ 4컷 합성 시작...');
       const result = await combinePhotos(filtered, selectedFrame, 'none');
 

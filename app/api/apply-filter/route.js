@@ -60,11 +60,11 @@ The background and atmosphere should evoke the feeling of these scent notes —
 for example, floral notes suggest gardens/petals, woody notes suggest warm forests/amber lighting,
 citrus suggests bright/fresh environments, musk suggests intimate/luxurious settings.
 
-=== ORIGINAL FILTER STYLE ===
+${filterPrompt ? `=== ORIGINAL FILTER STYLE ===
 Additionally, incorporate the following artistic filter style into the overall composition:
 ${filterPrompt}
 
-=== CRITICAL RULES ===
+` : ''}=== CRITICAL RULES ===
 1. The SUBJECT's face must be clearly recognizable — preserve their exact facial structure, eyes, nose, mouth, and distinctive features
 2. The REFERENCE CHARACTER ("${idolName}") must ALSO appear in the image — this is a TWO-PERSON composite
 3. Both figures should look like they naturally belong in the same scene
@@ -602,17 +602,27 @@ export async function POST(request) {
       );
     }
 
-    const filter = FILTER_PROMPTS[filterType] || FILTER_PROMPTS['kpop-idol'];
-
-    // 참조 이미지가 있으면 향수 프로필 기반 프롬프트 구성
     let fullPrompt;
-    if (customerData && referenceImageUrl) {
-      fullPrompt = buildReferencePrompt(filter.prompt, customerData);
-    } else {
-      fullPrompt = filter.prompt;
-    }
 
-    fullPrompt += `
+    // 🔥 PIN 모드 (acscent-composite): 참조 이미지 합성 전용 - 아트 스타일 필터 없음
+    if (filterType === 'acscent-composite' && customerData && referenceImageUrl) {
+      fullPrompt = buildReferencePrompt('', customerData);
+      fullPrompt += `
+
+CRITICAL INSTRUCTIONS:
+- You MUST generate and return a new edited image, NOT text
+- Create a NATURAL composite of the SUBJECT and REFERENCE CHARACTER together
+- Keep BOTH people photorealistic and natural-looking
+- The composition should feel like a real candid photo of two people together
+- High quality output with consistent lighting
+- Do NOT apply any artistic filters, cartoon effects, or style transformations
+- Keep it natural and realistic
+`;
+    } else {
+      // 🎨 일반 필터 모드: admin에서 설정한 아트 스타일 필터 적용
+      const filter = FILTER_PROMPTS[filterType] || FILTER_PROMPTS['kpop-idol'];
+      fullPrompt = filter.prompt;
+      fullPrompt += `
 
 CRITICAL INSTRUCTIONS:
 - You MUST generate and return a new edited image, NOT text
@@ -625,6 +635,7 @@ CRITICAL INSTRUCTIONS:
 - Ensure high quality output
 - Apply the background transformation as specified in the BACKGROUND section
 `;
+    }
 
     // 이미지 데이터 추출
     const imageData = image.replace(/^data:image\/[a-z]+;base64,/, "");
