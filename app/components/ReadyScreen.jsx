@@ -24,6 +24,9 @@ export default function ReadyScreen({
       const config = JSON.parse(savedConfig);
       const messages = getFilterIntroMessages(config.slotAssignment);
       setFilterMessages(messages);
+    } else {
+      // PIN 모드 등 필터 설정이 없으면 모달 스킵
+      setShowModal(false);
     }
   }, []);
 
