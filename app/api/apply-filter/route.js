@@ -1,6 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from 'next/server';
 
+// Vercel serverless 최대 실행 시간 (Pro: 300초, Hobby: 60초)
+export const maxDuration = 120;
+
 const genAI = new GoogleGenAI({
   apiKey: process.env.GOOGLE_GEMINI_API_KEY
 });
@@ -658,13 +661,38 @@ CRITICAL INSTRUCTIONS:
     const model = "gemini-3-pro-image-preview";
 
     console.log(`[Filter] Applying ${filter.name} filter with ${model}...`);
-    const response = await genAI.models.generateContent({
-      model: model,
-      contents: contents,
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-      },
-    });
+
+    // 재시도 로직 (최대 2회)
+    let response;
+    let lastError;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        console.log(`[Filter] Attempt ${attempt}...`);
+        response = await genAI.models.generateContent({
+          model: model,
+          contents: contents,
+          config: {
+            responseModalities: ['TEXT', 'IMAGE'],
+          },
+        });
+        break; // 성공하면 루프 종료
+      } catch (apiError) {
+        lastError = apiError;
+        console.error(`[Filter] Attempt ${attempt} failed:`, apiError.message);
+        if (attempt < 2) {
+          console.log(`[Filter] Retrying in 2 seconds...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+
+    if (!response) {
+      console.error('[Filter] All attempts failed:', lastError?.message);
+      return NextResponse.json(
+        { success: false, message: `Gemini API 호출 실패 (${lastError?.message || 'unknown'})` },
+        { status: 502 }
+      );
+    }
 
     // 생성된 이미지 추출
     if (response.candidates && response.candidates[0]?.content?.parts) {

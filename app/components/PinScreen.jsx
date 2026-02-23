@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 
 export default function PinScreen({ onPinVerified, onSkip, onBack }) {
   const [pin, setPin] = useState(['', '', '', '']);
@@ -8,43 +8,34 @@ export default function PinScreen({ onPinVerified, onSkip, onBack }) {
   const [error, setError] = useState(null);
   const [resultsList, setResultsList] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const inputRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
   const scrollRef = useRef(null);
 
-  useEffect(() => {
-    inputRefs[0].current?.focus();
-  }, []);
-
-  const handleInput = (index, value) => {
-    if (!/^\d*$/.test(value)) return;
+  // 가상 키패드에서 숫자 입력
+  const handleKeypadPress = (num) => {
+    const currentIndex = pin.findIndex(d => d === '');
+    if (currentIndex === -1) return; // 이미 4자리 다 입력됨
 
     const newPin = [...pin];
-    newPin[index] = value.slice(-1);
+    newPin[currentIndex] = String(num);
     setPin(newPin);
     setError(null);
 
-    if (value && index < 3) {
-      inputRefs[index + 1].current?.focus();
-    }
-
-    if (value && index === 3) {
+    // 4자리 다 입력되면 자동 조회
+    if (currentIndex === 3) {
       const fullPin = newPin.join('');
-      if (fullPin.length === 4) {
-        lookupPin(fullPin);
-      }
+      lookupPin(fullPin);
     }
   };
 
-  const handleKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !pin[index] && index > 0) {
-      inputRefs[index - 1].current?.focus();
-    }
-    if (e.key === 'Enter') {
-      const fullPin = pin.join('');
-      if (fullPin.length === 4) {
-        lookupPin(fullPin);
-      }
-    }
+  // 백스페이스
+  const handleKeypadDelete = () => {
+    const filledCount = pin.filter(d => d !== '').length;
+    if (filledCount === 0) return;
+
+    const newPin = [...pin];
+    newPin[filledCount - 1] = '';
+    setPin(newPin);
+    setError(null);
   };
 
   const lookupPin = async (pinCode) => {
@@ -88,7 +79,6 @@ export default function PinScreen({ onPinVerified, onSkip, onBack }) {
     setResultsList(null);
     setSelectedIndex(null);
     setError(null);
-    inputRefs[0].current?.focus();
   };
 
   const formatDate = (dateStr) => {
@@ -102,7 +92,7 @@ export default function PinScreen({ onPinVerified, onSkip, onBack }) {
 
   return (
     <div className="pin-screen robot-theme">
-      {/* 결과가 없을 때: 기존 PIN 입력 UI */}
+      {/* PIN 입력 화면 */}
       {!resultsList && (
         <div className="pin-container">
           {/* 로봇 눈 장식 */}
@@ -118,20 +108,21 @@ export default function PinScreen({ onPinVerified, onSkip, onBack }) {
           <h1 className="pin-title">AC'SCENT x PHOTOBOOTH</h1>
           <p className="pin-subtitle">ENTER ACCESS PIN</p>
 
-          <div className="pin-input-group">
+          {/* PIN 표시 (읽기 전용) */}
+          <div className="pin-display-group">
             {pin.map((digit, index) => (
-              <input
+              <div
                 key={index}
-                ref={inputRefs[index]}
-                type="tel"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleInput(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
-                className={`pin-input ${error ? 'pin-error' : ''} ${digit ? 'pin-filled' : ''}`}
-                disabled={isLoading}
-              />
+                className={`pin-display-cell ${error ? 'pin-error' : ''} ${digit ? 'pin-filled' : ''} ${
+                  !digit && pin.filter(d => d !== '').length === index ? 'pin-active' : ''
+                }`}
+              >
+                {digit ? (
+                  <span className="pin-display-digit">{digit}</span>
+                ) : (
+                  <span className="pin-display-cursor"></span>
+                )}
+              </div>
             ))}
           </div>
 
@@ -151,6 +142,71 @@ export default function PinScreen({ onPinVerified, onSkip, onBack }) {
             </div>
           )}
 
+          {/* 가상 키패드 */}
+          {!isLoading && !error && (
+            <div className="pin-keypad">
+              <div className="pin-keypad-row">
+                {[1, 2, 3].map(n => (
+                  <button
+                    key={n}
+                    className="pin-key"
+                    onClick={() => handleKeypadPress(n)}
+                    disabled={isLoading}
+                  >
+                    <span className="pin-key-num">{n}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="pin-keypad-row">
+                {[4, 5, 6].map(n => (
+                  <button
+                    key={n}
+                    className="pin-key"
+                    onClick={() => handleKeypadPress(n)}
+                    disabled={isLoading}
+                  >
+                    <span className="pin-key-num">{n}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="pin-keypad-row">
+                {[7, 8, 9].map(n => (
+                  <button
+                    key={n}
+                    className="pin-key"
+                    onClick={() => handleKeypadPress(n)}
+                    disabled={isLoading}
+                  >
+                    <span className="pin-key-num">{n}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="pin-keypad-row">
+                <button
+                  className="pin-key pin-key-fn"
+                  onClick={resetPin}
+                  disabled={isLoading}
+                >
+                  <span className="pin-key-label">CLR</span>
+                </button>
+                <button
+                  className="pin-key"
+                  onClick={() => handleKeypadPress(0)}
+                  disabled={isLoading}
+                >
+                  <span className="pin-key-num">0</span>
+                </button>
+                <button
+                  className="pin-key pin-key-fn"
+                  onClick={handleKeypadDelete}
+                  disabled={isLoading}
+                >
+                  <span className="pin-key-label">DEL</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="pin-actions">
             <button className="pin-skip-btn" onClick={onSkip}>
               BYPASS PIN
@@ -162,7 +218,7 @@ export default function PinScreen({ onPinVerified, onSkip, onBack }) {
         </div>
       )}
 
-      {/* 결과가 있을 때: 풀스크린 가로 카드 선택 */}
+      {/* 결과: 프로필 카드 선택 */}
       {resultsList && resultsList.length > 0 && (
         <div className="pin-results-screen">
           <div className="pin-results-header">
@@ -188,7 +244,6 @@ export default function PinScreen({ onPinVerified, onSkip, onBack }) {
                   className={`pin-card ${selectedIndex === idx ? 'selected' : ''}`}
                   onClick={() => setSelectedIndex(idx)}
                 >
-                  {/* 이미지 */}
                   <div className="pin-card-image">
                     {item.userImageUrl ? (
                       <img
@@ -209,8 +264,6 @@ export default function PinScreen({ onPinVerified, onSkip, onBack }) {
                     )}
                     <div className="pin-card-date-overlay">{formatDate(item.createdAt)}</div>
                   </div>
-
-                  {/* 정보: 이름 + 향수명만 */}
                   <div className="pin-card-info">
                     <h3 className="pin-card-name">{item.idolName}</h3>
                     <p className="pin-card-perfume">{item.perfumeName}</p>

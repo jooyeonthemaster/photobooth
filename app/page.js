@@ -177,22 +177,29 @@ export default function Home() {
       // 선택된 원본 사진 4장
       const selectedPhotos = selectedSlots.map(idx => capturedPhotos[idx]);
 
-      // 🔥 4개 필터 병렬 적용 (AC'SCENT 참조 이미지 포함)
+      // 🔥 4개 필터 순차 적용 (병렬 시 Gemini API rate limit 방지)
       console.log('🎨 필터 적용 시작...');
       if (referenceImageUrl) {
         console.log('🔗 AC\'SCENT 참조 이미지 포함:', referenceImageUrl);
       }
-      const filterPromises = selectedPhotos.map((photo, index) => {
+
+      const results = [];
+      for (let index = 0; index < selectedPhotos.length; index++) {
+        const photo = selectedPhotos[index];
         const filterId = slotAssignment[index];
         console.log(`슬롯 ${index + 1}: ${filterId} 필터 적용 중...`);
 
         if (filterId === 'none') {
-          return Promise.resolve({ success: true, image: photo });
+          results.push({ success: true, image: photo });
+        } else {
+          const result = await applyFilter(photo, filterId, referenceImageUrl, customerData);
+          results.push(result);
+          // API rate limit 방지를 위한 딜레이
+          if (index < selectedPhotos.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
         }
-        return applyFilter(photo, filterId, referenceImageUrl, customerData);
-      });
-
-      const results = await Promise.all(filterPromises);
+      }
 
       // 실패한 필터가 있는지 확인
       const failedCount = results.filter(r => !r.success).length;

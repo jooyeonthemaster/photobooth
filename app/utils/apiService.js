@@ -66,6 +66,16 @@ export const applyFilter = async (image, filterType, referenceImageUrl = null, c
       body: JSON.stringify(body)
     });
 
+    // 504 등 서버 에러 시 JSON 파싱 전에 체크
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error(`Filter API error (${response.status}):`, errorText);
+      return {
+        success: false,
+        message: `서버 오류 (${response.status}): 필터 처리 시간 초과 또는 API 오류`
+      };
+    }
+
     const data = await response.json();
 
     // 필터 적용 성공 시 이미지 압축
