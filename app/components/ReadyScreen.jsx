@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Webcam from 'react-webcam';
+import CameraView from './CameraView';
 import { getFilterIntroMessages } from '../constants/filterMessages';
 
 // 웹캠 대기 화면 컴포넌트
@@ -32,7 +32,11 @@ export default function ReadyScreen({
 
   // 🔥 카메라가 이미 준비되어 있으면 즉시 ready 상태로 설정
   useEffect(() => {
-    if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
+    const isElectron = typeof window !== 'undefined' && window.electronAPI?.app?.isElectron;
+    if (isElectron) {
+      // In Electron, camera readiness is handled by CameraView's onReady callback
+      // No need to check video readyState
+    } else if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
       console.log('Camera already loaded - instant ready!');
       onCameraReady();
     }
@@ -53,13 +57,11 @@ export default function ReadyScreen({
         </div>
       </div>
       <div className="camera-container">
-        <Webcam
-          audio={false}
+        <CameraView
           ref={webcamRef}
-          screenshotFormat="image/jpeg"
           videoConstraints={videoConstraints}
           className="webcam"
-          onUserMedia={onCameraReady}
+          onReady={onCameraReady}
         />
         {countdown && <div className="countdown-number">{countdown}</div>}
 

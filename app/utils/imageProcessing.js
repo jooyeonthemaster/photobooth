@@ -6,88 +6,83 @@
  * @returns {Promise<string>} Base64 인코딩된 이미지
  */
 export const captureAndCropImage = (webcamRef) => {
-  return new Promise((resolve, reject) => {
-    console.log('🎬 Capturing image');
+  return new Promise(async (resolve, reject) => {
+    const isElectron = typeof window !== 'undefined' && window.electronAPI?.app?.isElectron;
 
-    if (!webcamRef.current) {
-      console.error('❌ Webcam not ready');
-      reject(new Error('Webcam not ready'));
-      return;
+    let imageSrc;
+
+    if (isElectron) {
+      // DSLR capture via Electron IPC (digiCamControl)
+      console.log('📷 DSLR capture via digiCamControl');
+      try {
+        const result = await window.electronAPI.camera.capture();
+        if (!result.success) {
+          reject(new Error('DSLR capture failed: ' + (result.error || 'unknown')));
+          return;
+        }
+        imageSrc = result.image;
+      } catch (err) {
+        reject(new Error('DSLR capture error: ' + err.message));
+        return;
+      }
+    } else {
+      // Webcam capture (browser fallback)
+      console.log('🎬 Webcam capture');
+      if (!webcamRef.current) {
+        reject(new Error('Webcam not ready'));
+        return;
+      }
+      imageSrc = webcamRef.current.getScreenshot();
+      if (!imageSrc) {
+        reject(new Error('Failed to get screenshot'));
+        return;
+      }
     }
 
-    const imageSrc = webcamRef.current.getScreenshot();
-    if (!imageSrc) {
-      console.error('❌ Failed to get screenshot');
-      reject(new Error('Failed to get screenshot'));
-      return;
-    }
-
-    console.log('✅ Screenshot obtained - processing...');
+    console.log('✅ Image obtained - processing...');
 
     const img = new Image();
     img.onload = () => {
       console.log(`📏 원본 이미지: ${img.width} x ${img.height}`);
 
-      // 목표 비율: 2:3 (세로)
-      const targetRatio = 3 / 2; // height / width
-
-      // 원본 이미지 비율
+      const targetRatio = 3 / 2;
       const originalRatio = img.height / img.width;
-
       let cropWidth, cropHeight, cropX, cropY;
 
       if (originalRatio > targetRatio) {
-        // 이미지가 너무 높음 → 상하 크롭
         cropWidth = img.width;
         cropHeight = img.width * targetRatio;
         cropX = 0;
         cropY = (img.height - cropHeight) / 2;
       } else {
-        // 이미지가 너무 넓음 → 좌우 크롭
         cropHeight = img.height;
         cropWidth = img.height / targetRatio;
         cropX = (img.width - cropWidth) / 2;
         cropY = 0;
       }
 
-      console.log(`✂️ 크롭 영역: x=${Math.round(cropX)}, y=${Math.round(cropY)}, w=${Math.round(cropWidth)}, h=${Math.round(cropHeight)}`);
-
-      // 최종 출력 크기 (고해상도 유지)
       const outputWidth = 1200;
       const outputHeight = 1800;
-
       const canvas = document.createElement('canvas');
       canvas.width = outputWidth;
       canvas.height = outputHeight;
-
       const ctx = canvas.getContext('2d');
-
-      // 고품질 렌더링
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
 
-      // 좌우 반전 (거울 효과)
-      ctx.scale(-1, 1);
-      ctx.translate(-outputWidth, 0);
+      // Webcam needs mirror flip, DSLR does not
+      if (!isElectron) {
+        ctx.scale(-1, 1);
+        ctx.translate(-outputWidth, 0);
+      }
 
-      // 크롭된 영역을 캔버스에 그리기
-      ctx.drawImage(
-        img,
-        cropX, cropY, cropWidth, cropHeight,  // 소스 영역
-        0, 0, outputWidth, outputHeight       // 대상 영역
-      );
-
+      ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, outputWidth, outputHeight);
       const croppedImage = canvas.toDataURL('image/jpeg', 0.95);
-
-      console.log(`✅ 크롭 완료: ${outputWidth} x ${outputHeight} (2:3 세로 비율)`);
-
+      console.log(`✅ 크롭 완료: ${outputWidth} x ${outputHeight}`);
       resolve(croppedImage);
     };
 
-    img.onerror = () => {
-      reject(new Error('Failed to load image'));
-    };
-
+    img.onerror = () => reject(new Error('Failed to load image'));
     img.src = imageSrc;
   });
 };

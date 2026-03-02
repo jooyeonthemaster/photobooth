@@ -1,6 +1,6 @@
 'use client';
 
-import Webcam from 'react-webcam';
+import CameraView from './CameraView';
 
 // 촬영 중 화면 컴포넌트
 export default function ShootingScreen({
@@ -27,10 +27,8 @@ export default function ShootingScreen({
       </div>
 
       <div className="camera-container">
-        <Webcam
-          audio={false}
+        <CameraView
           ref={webcamRef}
-          screenshotFormat="image/jpeg"
           videoConstraints={videoConstraints}
           className="webcam"
         />

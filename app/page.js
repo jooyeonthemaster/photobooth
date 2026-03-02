@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import Webcam from 'react-webcam';
 import './page.css';
 
 // 컴포넌트 imports
@@ -127,7 +126,7 @@ export default function Home() {
     }, 1000);
   };
 
-  const captureImage = async (shotNumber) => {
+  const captureImage = async (shotNumber, retryCount = 0) => {
     try {
       const croppedImage = await captureAndCropImage(webcamRef);
       photosRef.current.push(croppedImage);
@@ -138,7 +137,12 @@ export default function Home() {
       }, 2000);
     } catch (error) {
       console.error('캡처 실패:', error);
-      alert('사진 촬영 중 오류가 발생했습니다.');
+      if (retryCount < 1) {
+        console.log('🔄 캡처 재시도...');
+        setTimeout(() => captureImage(shotNumber, retryCount + 1), 1000);
+      } else {
+        alert('사진 촬영에 실패했습니다. 카메라 연결을 확인해주세요.');
+      }
     }
   };
 
