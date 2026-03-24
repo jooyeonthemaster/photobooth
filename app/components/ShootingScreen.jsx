@@ -5,17 +5,19 @@ import CameraView from './CameraView';
 // 촬영 중 화면 컴포넌트
 export default function ShootingScreen({
   webcamRef,
-  videoConstraints,
+  stream,
+  cameraMode = 'webcam',
   currentShot,
   countdown,
-  capturedPhotos
+  capturedPhotos,
+  totalShots = 6
 }) {
   return (
     <div className="shooting-screen">
       <div className="shooting-progress">
-        <div className="progress-info">{currentShot + 1} / 6</div>
+        <div className="progress-info">{currentShot + 1} / {totalShots}</div>
         <div className="progress-bar">
-          {[0, 1, 2, 3, 4, 5].map(i => (
+          {Array.from({ length: totalShots }, (_, i) => i).map(i => (
             <div
               key={i}
               className={`progress-dot ${
@@ -29,7 +31,8 @@ export default function ShootingScreen({
       <div className="camera-container">
         <CameraView
           ref={webcamRef}
-          videoConstraints={videoConstraints}
+          stream={stream}
+          mode={cameraMode}
           className="webcam"
         />
         {countdown && <div className="countdown-number">{countdown}</div>}

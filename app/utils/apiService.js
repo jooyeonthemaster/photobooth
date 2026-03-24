@@ -1,5 +1,115 @@
 // API 호출 서비스
 
+// ========== 그리드 모드 헬퍼 함수 ==========
+
+const loadImageFromBase64 = (base64) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = base64;
+  });
+};
+
+/**
+ * 4장의 사진을 2x2 그리드 이미지로 합성
+ * 배치: [0]=좌상(Slot1), [2]=우상(Slot3), [1]=좌하(Slot2), [3]=우하(Slot4)
+ */
+export const createPhotoGrid = async (photos, cellWidth = 1200, cellHeight = 1800) => {
+  const gridWidth = cellWidth * 2;
+  const gridHeight = cellHeight * 2;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = gridWidth;
+  canvas.height = gridHeight;
+  const ctx = canvas.getContext('2d');
+
+  const positions = [
+    { idx: 0, x: 0, y: 0 },
+    { idx: 2, x: cellWidth, y: 0 },
+    { idx: 1, x: 0, y: cellHeight },
+    { idx: 3, x: cellWidth, y: cellHeight },
+  ];
+
+  for (const pos of positions) {
+    const img = await loadImageFromBase64(photos[pos.idx]);
+    ctx.drawImage(img, pos.x, pos.y, cellWidth, cellHeight);
+  }
+
+  return canvas.toDataURL('image/jpeg', 0.9);
+};
+
+/**
+ * 2x2 그리드 이미지를 4개 개별 이미지로 분할
+ * 반환 순서: [0]=좌상, [1]=좌하, [2]=우상, [3]=우하
+ */
+export const splitPhotoGrid = async (gridImage) => {
+  const img = await loadImageFromBase64(gridImage);
+  const cellWidth = Math.floor(img.width / 2);
+  const cellHeight = Math.floor(img.height / 2);
+
+  // 각 셀 경계에서 3% 트림 (인접 컷 잔여물 제거)
+  const trimX = Math.floor(cellWidth * 0.03);
+  const trimY = Math.floor(cellHeight * 0.03);
+  const trimmedW = cellWidth - trimX * 2;
+  const trimmedH = cellHeight - trimY * 2;
+
+  const extractions = [
+    { x: 0, y: 0 },
+    { x: 0, y: cellHeight },
+    { x: cellWidth, y: 0 },
+    { x: cellWidth, y: cellHeight },
+  ];
+
+  const results = [];
+  for (const ext of extractions) {
+    const canvas = document.createElement('canvas');
+    canvas.width = trimmedW;
+    canvas.height = trimmedH;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, ext.x + trimX, ext.y + trimY, trimmedW, trimmedH, 0, 0, trimmedW, trimmedH);
+    results.push(canvas.toDataURL('image/png'));
+  }
+  return results;
+};
+
+/**
+ * 그리드 이미지에 AI 필터 적용 (mode: 'grid')
+ * PIN 모드: referenceImageUrl, customerData 전달 시 참조 이미지 합성도 지원
+ */
+export const applyFilterGrid = async (gridImage, filterType, referenceImageUrl = null, customerData = null) => {
+  try {
+    const body = {
+      image: gridImage,
+      filterType: filterType,
+      mode: 'grid'
+    };
+    if (referenceImageUrl) body.referenceImageUrl = referenceImageUrl;
+    if (customerData) body.customerData = customerData;
+
+    const response = await fetch('/api/apply-filter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error(`Grid filter API error (${response.status}):`, errorText);
+      return { success: false, message: `Grid filter error (${response.status})` };
+    }
+
+    const data = await response.json();
+
+    return data;
+  } catch (error) {
+    console.error('Grid filter error:', error);
+    return { success: false, message: error.message };
+  }
+};
+
+// ========== 기존 유틸리티 ==========
+
 /**
  * 이미지를 압축하여 Base64 크기 줄이기
  * @param {string} base64Image - Base64 인코딩된 이미지
@@ -78,21 +188,6 @@ export const applyFilter = async (image, filterType, referenceImageUrl = null, c
 
     const data = await response.json();
 
-    // 필터 적용 성공 시 이미지 압축
-    if (data.success && data.image) {
-      console.log('🗜️ 필터 결과 압축 중...');
-      const originalSize = data.image.length;
-      const compressed = await compressImage(data.image, 1200, 0.7);
-      const compressedSize = compressed.length;
-      const reduction = ((1 - compressedSize / originalSize) * 100).toFixed(1);
-      console.log(`✅ 압축 완료: ${(originalSize / 1024).toFixed(0)}KB → ${(compressedSize / 1024).toFixed(0)}KB (${reduction}% 감소)`);
-
-      return {
-        ...data,
-        image: compressed
-      };
-    }
-
     return data;
   } catch (error) {
     console.error('Filter error:', error);
@@ -108,9 +203,10 @@ export const applyFilter = async (image, filterType, referenceImageUrl = null, c
  * @param {string[]} photos - Base64 인코딩된 이미지 배열 (4개)
  * @param {string} frame - 프레임 ID
  * @param {string} filterType - 필터 타입 (기본값: 'none')
+ * @param {string} customText - 프레임에 새길 커스텀 텍스트 (예: 최애 이름)
  * @returns {Promise<{success: boolean, path?: string, message?: string}>}
  */
-export const combinePhotos = async (photos, frame, filterType = 'none') => {
+export const combinePhotos = async (photos, frame, filterType = 'none', customText = '', frameVariant = 'black') => {
   try {
     const response = await fetch('/api/combine', {
       method: 'POST',
@@ -118,7 +214,9 @@ export const combinePhotos = async (photos, frame, filterType = 'none') => {
       body: JSON.stringify({
         photos: photos,
         frame: frame,
-        filterType: filterType
+        filterType: filterType,
+        customText: customText,
+        frameVariant: frameVariant
       })
     });
 
@@ -130,65 +228,6 @@ export const combinePhotos = async (photos, frame, filterType = 'none') => {
       success: false,
       message: '합성 중 오류 발생: ' + error.message
     };
-  }
-};
-
-/**
- * 이미지를 프린터로 출력
- * @param {string} image - Base64 인코딩된 이미지
- * @returns {Promise<{success: boolean, output?: string, message?: string}>}
- */
-export const printImage = async (image) => {
-  try {
-    console.log('🔄 /api/print 호출 중...');
-    const response = await fetch('/api/print', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        image: image
-      })
-    });
-
-    console.log('📥 응답 받음:', response.status);
-    const data = await response.json();
-    console.log('📄 응답 데이터:', data);
-
-    return data;
-  } catch (error) {
-    console.error('❌ Print error:', error);
-    return {
-      success: false,
-      message: '출력 중 오류 발생: ' + error.message
-    };
-  }
-};
-
-/**
- * 이미지 URL을 Base64로 변환
- * @param {string} imageUrl - 이미지 URL 또는 Base64 문자열
- * @returns {Promise<string>} Base64 인코딩된 이미지
- */
-export const convertImageUrlToBase64 = async (imageUrl) => {
-  try {
-    // 🔥 이미 Base64 형식이면 그대로 반환
-    if (imageUrl.startsWith('data:image/')) {
-      console.log('✅ 이미 Base64 형식입니다 - 변환 생략');
-      return imageUrl;
-    }
-
-    // URL인 경우에만 fetch하여 변환
-    const response = await fetch(imageUrl);
-    const blob = await response.blob();
-
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.error('이미지 변환 실패:', error);
-    throw error;
   }
 };
 

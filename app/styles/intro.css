@@ -1,0 +1,428 @@
+/* ========== 인트로 화면 (Robot Theme) ========== */
+.intro-screen.robot-theme {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #050505;
+  background-image:
+    radial-gradient(circle at 50% 50%, #111 0%, #000 100%),
+    linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 30px 30px, 30px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.8s ease-in;
+}
+
+.robot-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  perspective: 1000px;
+  width: 100vw;
+  height: 100vh;
+}
+
+.robot-head {
+  position: relative;
+  width: 100vw;
+  /* 화면 너비 전체 */
+  height: 100vh;
+  /* 화면 높이 전체 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: float 4s ease-in-out infinite;
+  z-index: 2;
+}
+
+.robot-ear {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15vw;
+  height: 60vh;
+  background: #222;
+  border: 1.5vw solid #00f3ff;
+  border-radius: 5vw;
+  box-shadow: 0 0 100px rgba(0, 243, 255, 0.5);
+  z-index: 1;
+}
+
+.robot-ear.left {
+  left: -8vw;
+  border-right: none;
+  border-radius: 5vw 0 0 5vw;
+}
+
+.robot-ear.right {
+  right: -8vw;
+  border-left: none;
+  border-radius: 0 5vw 5vw 0;
+}
+
+.robot-face {
+  width: 95vw;
+  /* 화면에 꽉 차게 */
+  height: 95vh;
+  background: #111;
+  border-radius: 20vw;
+  /* 곡률 조절 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 400px rgba(0, 243, 255, 0.4), inset 0 0 200px rgba(0, 243, 255, 0.3);
+  border: 2vw solid #00f3ff;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow: hidden;
+  z-index: 2;
+}
+
+.robot-face::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+  border-radius: 20vw 20vw 0 0;
+}
+
+.robot-face:hover {
+  transform: scale(1.01) rotate(0.5deg);
+  box-shadow: 0 0 500px rgba(0, 243, 255, 0.6), inset 0 0 300px rgba(0, 243, 255, 0.5);
+}
+
+.robot-eyes {
+  display: flex;
+  gap: 15vw;
+  margin-bottom: 5vh;
+  z-index: 2;
+  margin-top: -10vh;
+  /* 눈 위치 약간 위로 조정 */
+}
+
+/* ========== 눈 wrapper ========== */
+.robot-eye-wrapper {
+  width: 25vw;
+  height: 25vw;
+  max-width: 400px;
+  max-height: 400px;
+  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.robot-eye {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2vw solid #222;
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.robot-pupil-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.robot-pupil {
+  width: 15vw;
+  height: 15vw;
+  max-width: 240px;
+  max-height: 240px;
+  background: #00f3ff;
+  border-radius: 50%;
+  box-shadow: 0 0 100px #00f3ff, 0 0 200px #00f3ff, inset 0 0 80px #fff;
+  position: relative;
+  animation: blink 4s infinite;
+}
+
+.robot-sparkle {
+  position: absolute;
+  top: 10%;
+  right: 10%;
+  width: 4vw;
+  height: 4vw;
+  max-width: 60px;
+  max-height: 60px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 40px #fff;
+}
+
+.robot-blush {
+  position: absolute;
+  top: 60%;
+  width: 25vw;
+  height: 12vh;
+  background: #00f3ff;
+  border-radius: 50%;
+  filter: blur(50px);
+  opacity: 0.7;
+  z-index: 1;
+}
+
+.robot-blush.left {
+  left: 8%;
+}
+
+.robot-blush.right {
+  right: 8%;
+}
+
+.robot-mouth-container {
+  z-index: 2;
+  margin-top: 5vh;
+}
+
+.robot-mouth-btn {
+  background: #000;
+  border: 1.5vw solid #00f3ff;
+  color: #00f3ff;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 8vw;
+  /* 반응형 엄청 큰 폰트 */
+  font-weight: 900;
+  letter-spacing: 2vw;
+  padding: 4vh 10vw;
+  border-radius: 10vw;
+  box-shadow: 0 0 100px rgba(0, 243, 255, 0.6);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.robot-face:hover .robot-mouth-btn {
+  background: #00f3ff;
+  color: #000;
+  box-shadow: 0 0 200px #00f3ff;
+  transform: scale(1.05);
+}
+
+/* (Deleted robot text container styles) */
+
+@keyframes blink {
+
+  0%,
+  96%,
+  98% {
+    transform: scaleY(1);
+  }
+
+  97% {
+    transform: scaleY(0.1);
+  }
+
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes lookAround {
+
+  0%,
+  20%,
+  40%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  10%,
+  15% {
+    transform: translate(-8px, 0);
+  }
+
+  25%,
+  35% {
+    transform: translate(8px, -4px);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-30px);
+  }
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 15px #00f3ff, 0 0 30px #00f3ff, 0 0 45px #00f3ff;
+  }
+
+  to {
+    text-shadow: 0 0 30px #00f3ff, 0 0 45px #00f3ff, 0 0 60px #00f3ff, 0 0 75px #00f3ff;
+  }
+}
+
+/* ========== 상태 전환 트랜지션 ========== */
+.robot-ear,
+.robot-pupil,
+.robot-blush,
+.robot-mouth-btn,
+.robot-sparkle {
+  transition: all 0.8s ease-out;
+}
+
+/* ========== 수면 모드 ========== */
+.robot-sleeping .robot-eye-wrapper {
+  animation: sleepyPeek 8s ease-in-out infinite;
+}
+
+.robot-sleeping .robot-head {
+  animation: float 8s ease-in-out infinite;
+}
+
+.robot-sleeping .robot-eye {
+  border-color: #003545;
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.15);
+}
+
+.robot-sleeping .robot-pupil {
+  opacity: 0;
+  animation: none;
+}
+
+.robot-sleeping .robot-sparkle {
+  opacity: 0;
+}
+
+.robot-sleeping .robot-face {
+  border-color: #003545;
+  box-shadow: 0 0 100px rgba(0, 243, 255, 0.08), inset 0 0 50px rgba(0, 243, 255, 0.04);
+}
+
+.robot-sleeping .robot-ear {
+  border-color: #003545;
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+}
+
+.robot-sleeping .robot-blush {
+  opacity: 0.15;
+  background: #004858;
+}
+
+.robot-sleeping .robot-mouth-btn {
+  border-color: #003545;
+  color: #003545;
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+}
+
+/* ========== 각성 모드 ========== */
+.robot-awake .robot-eye-wrapper {
+  transform: scaleY(1);
+}
+
+.robot-awake .robot-head {
+  animation: float 4s ease-in-out infinite;
+}
+
+.robot-awake .robot-pupil {
+  background: #00f3ff;
+  box-shadow: 0 0 100px #00f3ff, 0 0 200px #00f3ff, inset 0 0 80px #fff;
+  opacity: 1;
+  animation: blink 4s infinite;
+}
+
+.robot-awake .robot-sparkle {
+  opacity: 1;
+  box-shadow: 0 0 40px #fff;
+}
+
+.robot-awake .robot-face {
+  border-color: #00f3ff;
+  box-shadow: 0 0 400px rgba(0, 243, 255, 0.4), inset 0 0 200px rgba(0, 243, 255, 0.3);
+}
+
+.robot-awake .robot-ear {
+  border-color: #00f3ff;
+  box-shadow: 0 0 100px rgba(0, 243, 255, 0.5);
+}
+
+.robot-awake .robot-blush {
+  opacity: 0.7;
+  background: #00f3ff;
+}
+
+.robot-awake .robot-mouth-btn {
+  border-color: #00f3ff;
+  color: #00f3ff;
+  box-shadow: 0 0 100px rgba(0, 243, 255, 0.6);
+}
+
+/* 각성 시 펄스 효과 */
+.robot-awake .robot-face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20vw;
+  box-shadow: inset 0 0 100px rgba(0, 243, 255, 0.15);
+  animation: wakePulse 1s ease-out;
+  pointer-events: none;
+}
+
+@keyframes wakePulse {
+  0% {
+    box-shadow: inset 0 0 200px rgba(0, 243, 255, 0.4);
+  }
+  100% {
+    box-shadow: inset 0 0 100px rgba(0, 243, 255, 0.15);
+  }
+}
+
+/* 수면 중 졸음 - 눈 살짝 떴다 닫힘 */
+@keyframes sleepyPeek {
+  0%, 85%, 100% {
+    transform: scaleY(0.08);
+  }
+  90%, 95% {
+    transform: scaleY(0.3);
+  }
+}
+
+/* ========== 로봇 마스코트 ========== */
+.robot-mascot {
+  position: absolute;
+  bottom: 3vh;
+  left: 50%;
+  margin-left: -7.5vh;
+  z-index: 101;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.robot-mascot img {
+  height: 15vh;
+  width: auto;
+  filter: drop-shadow(0 0 20px rgba(0, 243, 255, 0.3));
+  animation: mascotBob 4s ease-in-out infinite;
+}
+
+@keyframes mascotBob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}

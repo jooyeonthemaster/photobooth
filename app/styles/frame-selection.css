@@ -1,0 +1,125 @@
+/* ========== 프레임 선택 ========== */
+.frame-selection {
+  text-align: center;
+  animation: slideIn 0.5s ease-out;
+}
+
+.frame-selection h2 {
+  color: white;
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  font-weight: 700;
+}
+
+.frame-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.frame-option {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 4px solid transparent;
+}
+
+.frame-option:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.frame-option.selected {
+  border-width: 4px;
+  border-style: solid;
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.frame-preview {
+  width: 120px;
+  height: 180px;
+  border-radius: 10px;
+  margin: 0 auto 1rem;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.frame-cuts {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.frame-cut {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+}
+
+.frame-option span {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.next-btn {
+  background: white;
+  color: #667eea;
+  border: none;
+  padding: 1.2rem 3rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.next-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+}
+
+.kpop-filter-option {
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.filter-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-checkbox:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.filter-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #FFB3D9;
+}
+
+.filter-checkbox span {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+}

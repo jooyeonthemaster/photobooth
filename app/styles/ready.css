@@ -1,0 +1,99 @@
+/* ========== 웹캠 대기 화면 ========== */
+.ready-robot-eyes {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  margin-bottom: -8px;
+}
+
+.ready-screen {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  background-color: #050505;
+  background-image:
+    radial-gradient(circle at 50% 50%, #111 0%, #000 100%),
+    linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 30px 30px, 30px 30px;
+}
+
+.ready-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.shoot-btn {
+  background: #00f3ff;
+  color: #000;
+  border: none;
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+}
+
+.shoot-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 0 40px rgba(0, 243, 255, 0.6);
+}
+
+.shoot-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: rgba(0, 243, 255, 0.3);
+  box-shadow: none;
+}
+
+.ready-controls .back-btn {
+  background: transparent;
+  color: rgba(0, 243, 255, 0.6);
+  border: 2px solid rgba(0, 243, 255, 0.25);
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  border-color: #00f3ff;
+  color: #00f3ff;
+  text-shadow: 0 0 10px #00f3ff;
+  transform: translateY(-2px);
+}
+
+.camera-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 2rem 3rem;
+  border-radius: 20px;
+  border: 2px solid rgba(0, 243, 255, 0.3);
+}
+
+.camera-loading p {
+  color: #00f3ff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}

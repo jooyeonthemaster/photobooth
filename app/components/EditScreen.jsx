@@ -1,6 +1,8 @@
 'use client';
 
 // 편집 화면 컴포넌트 (필터 적용)
+import { useState, useEffect } from 'react';
+
 export default function EditScreen({
   capturedPhotos,
   selectedSlots,
@@ -12,8 +14,42 @@ export default function EditScreen({
   onSlotClick,
   onApplyFilter,
   onConfirm,
-  onBack
+  onBack,
+  customerData
 }) {
+  const [frameUrl, setFrameUrl] = useState('/frame/NEANDER LAB AI PHOTOBOOTH.svg');
+
+  useEffect(() => {
+    let objectUrl = null;
+    const loadDynamicFrame = async () => {
+      try {
+        const res = await fetch('/frame/NEANDER LAB AI PHOTOBOOTH.svg');
+        let svgText = await res.text();
+
+        const now = new Date();
+        const formattedDate = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+
+        if (customerData?.idolName) {
+          svgText = svgText.replace('{{CUSTOM_TEXT}}', customerData.idolName);
+        } else {
+          svgText = svgText.replace('{{CUSTOM_TEXT}} // ', '');
+        }
+        svgText = svgText.replace('{{CURRENT_DATE}}', formattedDate);
+
+        const blob = new Blob([svgText], { type: 'image/svg+xml' });
+        objectUrl = URL.createObjectURL(blob);
+        setFrameUrl(objectUrl);
+      } catch (err) {
+        console.error('Failed to load dynamic frame in EditScreen:', err);
+      }
+    };
+    loadDynamicFrame();
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [customerData]);
+
   return (
     <div className="edit-screen">
       <h2>✨ 각 사진에 필터를 적용하세요</h2>
@@ -27,15 +63,14 @@ export default function EditScreen({
             <img
               alt="frame"
               className="frame-background"
-              src="/frame/NEANDER LAB AI PHOTOBOOTH.svg"
+              src={frameUrl}
             />
             <div className="frame-slots">
               {[0, 1, 2, 3].map(slotIdx => (
                 <div
                   key={slotIdx}
-                  className={`frame-slot slot-${slotIdx} ${
-                    editingSlotIndex === slotIdx ? 'editing' : ''
-                  }`}
+                  className={`frame-slot slot-${slotIdx} ${editingSlotIndex === slotIdx ? 'editing' : ''
+                    }`}
                   onClick={() => onSlotClick(slotIdx)}
                 >
                   {selectedSlots[slotIdx] !== null ? (
@@ -67,9 +102,8 @@ export default function EditScreen({
                 {filters.map(filter => (
                   <button
                     key={filter.id}
-                    className={`filter-option-btn ${
-                      slotFilters[editingSlotIndex] === filter.id ? 'active' : ''
-                    }`}
+                    className={`filter-option-btn ${slotFilters[editingSlotIndex] === filter.id ? 'active' : ''
+                      }`}
                     onClick={() => onApplyFilter(editingSlotIndex, filter.id)}
                     disabled={isApplyingFilter}
                   >
@@ -98,15 +132,6 @@ export default function EditScreen({
         </button>
       </div>
 
-      {/* 필터 적용 중 로딩 오버레이 */}
-      {isApplyingFilter && (
-        <div className="loading-overlay">
-          <div className="loading-box">
-            <div className="spinner-large"></div>
-            <p>AI 필터 적용 중...</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,0 +1,385 @@
+/* ========== PIN 입력 화면 (Robot Theme) ========== */
+.pin-screen.robot-theme {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #050505;
+  background-image:
+    radial-gradient(circle at 50% 50%, #111 0%, #000 100%),
+    linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 30px 30px, 30px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.8s ease-in;
+}
+
+.pin-screen.robot-theme .pin-container {
+  text-align: center;
+  max-width: 520px;
+  width: 92%;
+  background: rgba(17, 17, 17, 0.85);
+  padding: 32px 36px;
+  border-radius: 36px;
+  border: 3px solid #00f3ff;
+  box-shadow: 0 0 50px rgba(0, 243, 255, 0.2), inset 0 0 30px rgba(0, 243, 255, 0.1);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.pin-screen.robot-theme .pin-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: #00f3ff;
+  box-shadow: 0 0 20px #00f3ff;
+  animation: scanline 3s linear infinite;
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(800px);
+    opacity: 0;
+  }
+}
+
+.pin-screen.robot-theme .pin-title {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+
+.pin-screen.robot-theme .pin-subtitle {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1.1rem;
+  color: rgba(0, 243, 255, 0.8);
+  margin-bottom: 24px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* PIN 표시 셀 (읽기 전용 - 가상 키패드용) */
+.pin-screen.robot-theme .pin-display-group {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.pin-screen.robot-theme .pin-display-cell {
+  width: 72px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(0, 243, 255, 0.2);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
+  position: relative;
+}
+
+.pin-screen.robot-theme .pin-display-cell.pin-active {
+  border-color: #00f3ff;
+  background: rgba(0, 243, 255, 0.06);
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.25), inset 0 0 15px rgba(0, 243, 255, 0.1);
+}
+
+.pin-screen.robot-theme .pin-display-cell.pin-filled {
+  border-color: #00f3ff;
+  background: rgba(0, 243, 255, 0.12);
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+}
+
+.pin-screen.robot-theme .pin-display-cell.pin-error {
+  border-color: #ff0055;
+  background: rgba(255, 0, 85, 0.1);
+  box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
+  animation: shake 0.5s ease-in-out;
+}
+
+.pin-display-digit {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: #00f3ff;
+  text-shadow: 0 0 12px #00f3ff;
+  animation: digitAppear 0.15s ease-out;
+}
+
+@keyframes digitAppear {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pin-display-cursor {
+  width: 2px;
+  height: 40px;
+  background: #00f3ff;
+  box-shadow: 0 0 8px #00f3ff;
+  animation: cursorBlink 1s step-end infinite;
+}
+
+.pin-display-cell:not(.pin-active) .pin-display-cursor {
+  display: none;
+}
+
+@keyframes cursorBlink {
+
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* 가상 키패드 */
+.pin-keypad {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+  animation: keypadSlideUp 0.4s ease-out;
+}
+
+@keyframes keypadSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pin-keypad-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.pin-key {
+  width: 88px;
+  height: 72px;
+  border: 2px solid rgba(0, 243, 255, 0.25);
+  border-radius: 14px;
+  background: rgba(0, 243, 255, 0.04);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.pin-key::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(0, 243, 255, 0.06) 0%, transparent 100%);
+  border-radius: 12px 12px 0 0;
+  pointer-events: none;
+}
+
+.pin-key:hover {
+  border-color: rgba(0, 243, 255, 0.5);
+  background: rgba(0, 243, 255, 0.08);
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
+}
+
+.pin-key:active {
+  transform: scale(0.93);
+  border-color: #00f3ff;
+  background: rgba(0, 243, 255, 0.2);
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.4), inset 0 0 15px rgba(0, 243, 255, 0.15);
+}
+
+.pin-key:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pin-key-num {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 2rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 6px rgba(0, 243, 255, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.pin-key:active .pin-key-num {
+  color: #00f3ff;
+  text-shadow: 0 0 12px #00f3ff;
+}
+
+/* 기능 키 (CLR, DEL) */
+.pin-key.pin-key-fn {
+  border-color: rgba(0, 243, 255, 0.15);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.pin-key.pin-key-fn::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
+}
+
+.pin-key.pin-key-fn:hover {
+  border-color: rgba(0, 243, 255, 0.35);
+  background: rgba(0, 243, 255, 0.05);
+}
+
+.pin-key.pin-key-fn:active {
+  background: rgba(0, 243, 255, 0.12);
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+}
+
+.pin-key-label {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(0, 243, 255, 0.6);
+  letter-spacing: 2px;
+  position: relative;
+  z-index: 1;
+}
+
+.pin-key.pin-key-fn:active .pin-key-label {
+  color: #00f3ff;
+}
+
+.pin-screen.robot-theme .pin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pin-screen.robot-theme .pin-skip-btn {
+  padding: 16px;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #00f3ff;
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid #00f3ff;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 2px;
+}
+
+.pin-screen.robot-theme .pin-skip-btn:hover {
+  background: #00f3ff;
+  color: #000;
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+.pin-screen.robot-theme .pin-back-btn {
+  padding: 12px;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.5);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pin-screen.robot-theme .pin-back-btn:hover {
+  color: #00f3ff;
+  text-shadow: 0 0 10px #00f3ff;
+}
+
+/* 로봇 눈 장식 */
+.pin-robot-eyes {
+  display: flex;
+  justify-content: center;
+  gap: 36px;
+  margin-bottom: 16px;
+}
+
+.pin-robot-eyes.small {
+  gap: 36px;
+  margin-bottom: 20px;
+}
+
+.pin-robot-eye {
+  width: 48px;
+  height: 48px;
+  background: radial-gradient(circle, #111 40%, #000 100%);
+  border: 3px solid #00f3ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.3), inset 0 0 15px rgba(0, 243, 255, 0.1);
+  animation: blink 4s infinite;
+}
+
+.pin-robot-eyes.small .pin-robot-eye {
+  width: 56px;
+  height: 56px;
+  border-width: 3px;
+}
+
+.pin-robot-pupil {
+  width: 16px;
+  height: 16px;
+  background: radial-gradient(circle, #00f3ff 30%, #007a82 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 12px #00f3ff;
+  animation: lookAround 5s ease-in-out infinite;
+}
+
+.pin-robot-eyes.small .pin-robot-pupil {
+  width: 18px;
+  height: 18px;
+}

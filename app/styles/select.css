@@ -1,0 +1,506 @@
+/* ========== 사진 선택 화면 ========== */
+.select-screen {
+  width: 100vw;
+  height: 100vh;
+  padding: 1.5rem 2rem;
+  animation: fadeIn 0.5s ease-in;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: #050505;
+  background-image:
+    radial-gradient(circle at 50% 50%, #111 0%, #000 100%),
+    linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 30px 30px, 30px 30px;
+}
+
+.select-screen h2 {
+  color: white;
+  font-size: 1.6rem;
+  margin: 0 0 0.3rem 0;
+  text-align: center;
+  flex-shrink: 0;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.select-subtitle {
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  margin: 0 0 0.8rem 0;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.selection-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  flex: 1;
+  min-height: 0;
+  max-height: 75vh;
+  overflow: hidden;
+  padding: 0 2rem;
+}
+
+/* 왼쪽: 프레임 섹션 */
+.frame-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 243, 255, 0.03);
+  border: 1px solid rgba(0, 243, 255, 0.15);
+  border-radius: 16px;
+  padding: 1rem;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.frame-container {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  height: 100%;
+  max-height: 100%;
+}
+
+.frame-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 1;
+}
+
+.frame-slots {
+  position: absolute;
+  top: 5.555%;
+  left: 6.25%;
+  width: 87.5%;
+  height: 77.777%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 3.57% 4.76%;
+  z-index: 2;
+}
+
+.frame-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(200, 200, 200, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.slot-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.slot-number {
+  color: white;
+  font-size: 3rem;
+  font-weight: 900;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+/* 기존 스타일 유지 (EditScreen용) */
+.select-screen .composite-preview {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.select-screen .composite-preview h3 {
+  color: white;
+  font-size: 0.7rem;
+  margin: 0 0 0.4rem 0;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.select-screen .composite-container {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.select-screen .composite-container>img,
+.select-screen .composite-container>.composite-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 180px;
+  aspect-ratio: 3 / 4;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.select-screen .composite-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.select-screen .composite-overlay {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(4, 1fr);
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+.select-screen .overlay-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.select-screen .overlay-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.select-screen .slot-label {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+
+/* 오른쪽: 사진 그리드 */
+.photos-grid {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.photos-grid h3 {
+  color: white;
+  font-size: 0.7rem;
+  margin: 0 0 0.4rem 0;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* 오른쪽: 사진 섹션 */
+.photos-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(0, 243, 255, 0.03);
+  border: 1px solid rgba(0, 243, 255, 0.15);
+  border-radius: 16px;
+  padding: 1rem;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.photos-section h3 {
+  color: white;
+  font-size: 1.1rem;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.photos-grid-2x3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.photo-card {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid rgba(0, 243, 255, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+  min-height: 0;
+}
+
+.photo-card:hover {
+  transform: scale(1.05);
+  border-color: rgba(0, 243, 255, 0.6);
+  box-shadow: 0 0 25px rgba(0, 243, 255, 0.3);
+}
+
+.photo-card.selected {
+  border-color: #00f3ff;
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+}
+
+.photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.photo-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid rgba(0, 243, 255, 0.2);
+  transition: border-color 0.3s ease;
+}
+
+.photo-item:hover .photo-thumbnail {
+  border-color: #00f3ff;
+}
+
+.photo-number {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+.select-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  flex-shrink: 0;
+}
+
+.combine-btn {
+  background: #00f3ff;
+  color: #000;
+  border: none;
+  padding: 0 2.5rem;
+  height: 52px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.combine-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 0 40px rgba(0, 243, 255, 0.6);
+}
+
+.combine-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.combine-btn .spinner {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  border: 3px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0;
+}
+
+.reset-btn,
+.retake-btn {
+  background: transparent;
+  color: rgba(0, 243, 255, 0.6);
+  border: 2px solid rgba(0, 243, 255, 0.25);
+  padding: 0 1.8rem;
+  height: 52px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reset-btn:hover,
+.retake-btn:hover {
+  border-color: #00f3ff;
+  color: #00f3ff;
+  text-shadow: 0 0 10px #00f3ff;
+  transform: translateY(-2px);
+}
+
+/* ========== AC'SCENT 배너 (SelectScreen) ========== */
+.acscent-banner {
+  margin-bottom: 16px;
+  animation: fadeIn 0.5s ease;
+}
+
+.acscent-banner-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 50px;
+  backdrop-filter: blur(10px);
+}
+
+.acscent-ref-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid rgba(251, 191, 36, 0.5);
+}
+
+.acscent-banner-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.acscent-badge {
+  padding: 2px 10px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #1e293b;
+  font-size: 0.7rem;
+  font-weight: 800;
+  border-radius: 12px;
+  letter-spacing: 1px;
+}
+
+.acscent-perfume {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+}
+
+/* ========== PIN 모드: 1장 선택 레이아웃 ========== */
+.pin-select-layout {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 0 2rem;
+}
+
+.pin-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 900px;
+}
+
+.pin-photo-card {
+  position: relative;
+  cursor: pointer;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 4px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.3);
+  aspect-ratio: 2 / 3;
+  transition: all 0.3s ease;
+}
+
+.pin-photo-card:hover {
+  transform: scale(1.03);
+  border-color: rgba(0, 243, 255, 0.5);
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+}
+
+.pin-photo-card.pin-selected {
+  border-color: #00f3ff;
+  box-shadow: 0 0 40px rgba(0, 243, 255, 0.5);
+}
+
+.pin-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pin-selected-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  background: rgba(0, 243, 255, 0.85);
+  color: #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 900;
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.6);
+}

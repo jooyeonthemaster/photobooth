@@ -7,12 +7,14 @@ import { getFilterIntroMessages } from '../constants/filterMessages';
 // 웹캠 대기 화면 컴포넌트
 export default function ReadyScreen({
   webcamRef,
-  videoConstraints,
+  stream,
+  cameraMode = 'webcam',
   countdown,
   cameraReady,
   onCameraReady,
   onStartShooting,
-  onBack
+  onBack,
+  totalShots = 6
 }) {
   const [showModal, setShowModal] = useState(true);
   const [filterMessages, setFilterMessages] = useState(null);
@@ -30,13 +32,9 @@ export default function ReadyScreen({
     }
   }, []);
 
-  // 🔥 카메라가 이미 준비되어 있으면 즉시 ready 상태로 설정
+  // 카메라가 이미 준비되어 있으면 즉시 ready 상태로 설정
   useEffect(() => {
-    const isElectron = typeof window !== 'undefined' && window.electronAPI?.app?.isElectron;
-    if (isElectron) {
-      // In Electron, camera readiness is handled by CameraView's onReady callback
-      // No need to check video readyState
-    } else if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
+    if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState >= 2) {
       console.log('Camera already loaded - instant ready!');
       onCameraReady();
     }
@@ -59,7 +57,8 @@ export default function ReadyScreen({
       <div className="camera-container">
         <CameraView
           ref={webcamRef}
-          videoConstraints={videoConstraints}
+          stream={stream}
+          mode={cameraMode}
           className="webcam"
           onReady={onCameraReady}
         />
@@ -102,7 +101,7 @@ export default function ReadyScreen({
           onClick={onStartShooting}
           disabled={!cameraReady || showModal}
         >
-          {cameraReady ? '📸 6번 촬영 시작하기' : '⏳ 카메라 준비 중...'}
+          {cameraReady ? `📸 ${totalShots}번 촬영 시작하기` : '⏳ 카메라 준비 중...'}
         </button>
         <button className="back-btn" onClick={onBack}>
           ← 뒤로 가기

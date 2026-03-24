@@ -1,42 +1,67 @@
 // 이미지 캡처 및 처리 유틸리티
 
 /**
+ * 이미지를 2:3 비율로 크롭하여 세로 이미지 생성 (공통 크롭 로직)
+ * @param {HTMLImageElement} img - 로드된 이미지
+ * @returns {string} Base64 인코딩된 PNG
+ */
+function cropToPortrait(img) {
+  const targetRatio = 3 / 2;
+  const originalRatio = img.height / img.width;
+  let cropWidth, cropHeight, cropX, cropY;
+
+  if (originalRatio > targetRatio) {
+    cropWidth = img.width;
+    cropHeight = img.width * targetRatio;
+    cropX = 0;
+    cropY = (img.height - cropHeight) / 2;
+  } else {
+    cropHeight = img.height;
+    cropWidth = img.height / targetRatio;
+    cropX = (img.width - cropWidth) / 2;
+    cropY = 0;
+  }
+
+  // 가장자리 5% 추가 트림 (인접 피사체 bleed 방지)
+  const trimRatio = 0.03;
+  const trimX = cropWidth * trimRatio;
+  const trimY = cropHeight * trimRatio;
+  cropX += trimX;
+  cropY += trimY;
+  cropWidth -= trimX * 2;
+  cropHeight -= trimY * 2;
+
+  const outputWidth = 1600;
+  const outputHeight = 2400;
+  const canvas = document.createElement('canvas');
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, outputWidth, outputHeight);
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+/**
  * 웹캠에서 이미지를 캡처하고 2:3 비율로 크롭하여 세로 이미지 생성
  * @param {Object} webcamRef - React ref 객체
  * @returns {Promise<string>} Base64 인코딩된 이미지
  */
 export const captureAndCropImage = (webcamRef) => {
   return new Promise(async (resolve, reject) => {
-    const isElectron = typeof window !== 'undefined' && window.electronAPI?.app?.isElectron;
-
     let imageSrc;
 
-    if (isElectron) {
-      // DSLR capture via Electron IPC (digiCamControl)
-      console.log('📷 DSLR capture via digiCamControl');
-      try {
-        const result = await window.electronAPI.camera.capture();
-        if (!result.success) {
-          reject(new Error('DSLR capture failed: ' + (result.error || 'unknown')));
-          return;
-        }
-        imageSrc = result.image;
-      } catch (err) {
-        reject(new Error('DSLR capture error: ' + err.message));
-        return;
-      }
-    } else {
-      // Webcam capture (browser fallback)
-      console.log('🎬 Webcam capture');
-      if (!webcamRef.current) {
-        reject(new Error('Webcam not ready'));
-        return;
-      }
-      imageSrc = webcamRef.current.getScreenshot();
-      if (!imageSrc) {
-        reject(new Error('Failed to get screenshot'));
-        return;
-      }
+    console.log('📷 Webcam capture');
+    if (!webcamRef.current) {
+      reject(new Error('Webcam not ready'));
+      return;
+    }
+    imageSrc = webcamRef.current.getScreenshot();
+    if (!imageSrc) {
+      reject(new Error('Failed to get screenshot'));
+      return;
     }
 
     console.log('✅ Image obtained - processing...');
@@ -44,41 +69,8 @@ export const captureAndCropImage = (webcamRef) => {
     const img = new Image();
     img.onload = () => {
       console.log(`📏 원본 이미지: ${img.width} x ${img.height}`);
-
-      const targetRatio = 3 / 2;
-      const originalRatio = img.height / img.width;
-      let cropWidth, cropHeight, cropX, cropY;
-
-      if (originalRatio > targetRatio) {
-        cropWidth = img.width;
-        cropHeight = img.width * targetRatio;
-        cropX = 0;
-        cropY = (img.height - cropHeight) / 2;
-      } else {
-        cropHeight = img.height;
-        cropWidth = img.height / targetRatio;
-        cropX = (img.width - cropWidth) / 2;
-        cropY = 0;
-      }
-
-      const outputWidth = 1200;
-      const outputHeight = 1800;
-      const canvas = document.createElement('canvas');
-      canvas.width = outputWidth;
-      canvas.height = outputHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-
-      // Webcam needs mirror flip, DSLR does not
-      if (!isElectron) {
-        ctx.scale(-1, 1);
-        ctx.translate(-outputWidth, 0);
-      }
-
-      ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, outputWidth, outputHeight);
-      const croppedImage = canvas.toDataURL('image/jpeg', 0.95);
-      console.log(`✅ 크롭 완료: ${outputWidth} x ${outputHeight}`);
+      const croppedImage = cropToPortrait(img);
+      console.log(`✅ 크롭 완료: 1600 x 2400`);
       resolve(croppedImage);
     };
 
@@ -88,47 +80,57 @@ export const captureAndCropImage = (webcamRef) => {
 };
 
 /**
- * 프린터 미리보기 이미지 생성 (4:6 비율)
- * @param {string} imageUrl - 이미지 URL 또는 Base64
- * @returns {Promise<string>} Base64 인코딩된 미리보기 이미지
+ * data URI 이미지를 2:3 비율로 크롭 (EDSDK 캡처 이미지용)
+ * @param {string} dataUri - Base64 data URI
+ * @returns {Promise<string>} Base64 인코딩된 PNG (1600x2400)
  */
-export const generatePrintPreview = (imageUrl) => {
+export const cropImageToPortrait = (dataUri) => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    
     img.onload = () => {
-      console.log('🖨️ 프린터 미리보기 생성');
-      console.log('이미지 크기:', img.width, 'x', img.height);
-
-      // 미리보기용 Canvas 생성 (4:6 세로 비율)
-      const previewCanvas = document.createElement('canvas');
-      const previewWidth = 400;  // 미리보기 크기
-      const previewHeight = 600; // 4:6 비율
-      previewCanvas.width = previewWidth;
-      previewCanvas.height = previewHeight;
-
-      const ctx = previewCanvas.getContext('2d');
-
-      // 배경을 흰색으로
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, previewWidth, previewHeight);
-
-      // 이미지를 전체에 그대로 그리기
-      ctx.drawImage(img, 0, 0, previewWidth, previewHeight);
-
-      // 미리보기 이미지 저장
-      const previewDataUrl = previewCanvas.toDataURL('image/jpeg', 0.95);
-      
-      console.log('✅ 프린터 미리보기 생성 완료');
-      resolve(previewDataUrl);
+      console.log(`📏 EDSDK 원본: ${img.width} x ${img.height}`);
+      const croppedImage = cropToPortrait(img);
+      console.log(`✅ 크롭 완료: 1600 x 2400`);
+      resolve(croppedImage);
     };
-
-    img.onerror = () => {
-      reject(new Error('Failed to load image for preview'));
-    };
-
-    img.src = imageUrl;
+    img.onerror = () => reject(new Error('Failed to load captured image'));
+    img.src = dataUri;
   });
 };
 
+/**
+ * AI 합성 전 이미지 소프트닝 (DSLR 고해상도 디테일 완화)
+ * 원본 위에 블러 레이어를 반투명으로 블렌딩하여 피부 디테일만 줄임
+ * @param {string} dataUri - Base64 data URI
+ * @returns {Promise<string>} 소프트닝된 Base64 이미지
+ */
+export const softenForAI = (dataUri) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // 1단계: 작은 해상도로 다운스케일 (피부 디테일 자연 감소)
+      const smallW = Math.round(img.width * 0.5);
+      const smallH = Math.round(img.height * 0.5);
+      const small = document.createElement('canvas');
+      small.width = smallW;
+      small.height = smallH;
+      const sCtx = small.getContext('2d');
+      sCtx.imageSmoothingEnabled = true;
+      sCtx.imageSmoothingQuality = 'high';
+      sCtx.drawImage(img, 0, 0, smallW, smallH);
 
+      // 2단계: 원래 해상도로 업스케일
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(small, 0, 0, img.width, img.height);
+
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => reject(new Error('Failed to soften image'));
+    img.src = dataUri;
+  });
+};

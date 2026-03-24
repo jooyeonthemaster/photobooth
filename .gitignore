@@ -94,6 +94,25 @@ public/photos/
 # System files
 nul
 
+# SDK binaries
+cannon edsdk/
+edsdk-dlls/
+
+# MediaPipe WASM/model (built from node_modules via copy-static.js)
+public/mediapipe/
+
+# Large media / test files
+public/computer motion.mp4
+public/frame/test_output*.jpg
+public/hf_*.png
+scripts/fonts/
+
+# Binaries
+printer-service/DnpPrinter.exe
+
+# Claude settings
+.claude/settings.local.json
+
 
 
 

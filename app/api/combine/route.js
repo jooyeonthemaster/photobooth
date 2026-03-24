@@ -2,11 +2,32 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+function findFrameSvg(variant = 'black') {
+  const frameName = variant === 'white'
+    ? 'NEANDER LAB AI PHOTOBOOTH WHITE.svg'
+    : 'NEANDER LAB AI PHOTOBOOTH.svg';
+  const candidates = [
+    path.join(process.cwd(), 'public', 'frame', frameName),
+    path.join(process.cwd(), '..', 'public', 'frame', frameName),
+    path.join(process.cwd(), 'resources', 'public', 'frame', frameName),
+  ];
+  for (const p of candidates) {
+    try {
+      if (require('fs').existsSync(p)) {
+        console.log('[Combine] Found frame SVG at:', p);
+        return p;
+      }
+    } catch { }
+  }
+  console.warn('[Combine] Frame SVG not found, using default:', candidates[0]);
+  return candidates[0];
+}
+
 export async function POST(request) {
   try {
     console.log('🔵 /api/combine - Request received');
-    const { photos, frame, filterType } = await request.json();
-    console.log('🔵 Photos count:', photos?.length, 'Frame:', frame, 'Filter:', filterType);
+    const { photos, frame, filterType, customText = '', frameVariant = 'black' } = await request.json();
+    console.log('🔵 Photos count:', photos?.length, 'Frame:', frame, 'Filter:', filterType, 'CustomText:', customText, 'FrameVariant:', frameVariant);
 
     if (!photos || photos.length !== 4) {
       console.log('❌ Invalid photos count:', photos?.length);
@@ -60,24 +81,36 @@ export async function POST(request) {
     console.log('✅ Canvas package imported successfully');
 
     // SVG 프레임 로드
-    const framePath = path.join(process.cwd(), 'public', 'frame', 'NEANDER LAB AI PHOTOBOOTH.svg');
+    const framePath = findFrameSvg(frameVariant);
     console.log('🔵 Loading frame from:', framePath);
     const frameSvgData = await fs.readFile(framePath, 'utf-8');
     console.log('✅ Frame loaded, length:', frameSvgData.length);
 
-    // 캔버스 크기: 4x6 inch 인화 기준 (메모리 절약)
-    // 8GB RAM 환경에서도 안정적으로 작동하도록 크기 축소
-    const canvasWidth = 800;
-    const canvasHeight = 1200;
+    // 캔버스 크기: 4x6 inch 인화 기준 600DPI (2400x3600)
+    const canvasWidth = 2400;
+    const canvasHeight = 3600;
 
     console.log('🔵 Creating canvas:', canvasWidth, 'x', canvasHeight);
     const canvas = createCanvas(canvasWidth, canvasHeight);
     const ctx = canvas.getContext('2d');
     console.log('✅ Canvas created successfully');
 
+    // SVG 텍스트 치환 (Dynamic Text Injection)
+    const now = new Date();
+    const formattedDate = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+
+    let modifiedSvgData = frameSvgData;
+    if (customText && customText.trim() !== '') {
+      modifiedSvgData = modifiedSvgData.replace('{{CUSTOM_TEXT}}', customText);
+    } else {
+      // 값이 없으면 앞의 변수와 구분자 '// '까지 통째로 삭제하여 날짜만 남깁니다.
+      modifiedSvgData = modifiedSvgData.replace('{{CUSTOM_TEXT}} // ', '');
+    }
+    modifiedSvgData = modifiedSvgData.replace('{{CURRENT_DATE}}', formattedDate);
+
     // SVG를 이미지로 변환하여 배경으로 그리기
     try {
-      const svgBuffer = Buffer.from(frameSvgData);
+      const svgBuffer = Buffer.from(modifiedSvgData);
       const frameImg = await loadImage(svgBuffer);
       ctx.drawImage(frameImg, 0, 0, canvasWidth, canvasHeight);
     } catch (err) {
@@ -86,33 +119,52 @@ export async function POST(request) {
       ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     }
 
-    // 4개 이미지 영역 좌표 (SVG clipPath 기준 -> 800x1200 스케일)
-    const scale = 800 / 900; // viewBox 900을 800으로 스케일
+    // 4개 이미지 영역 좌표 (새로운 SVG 템플릿 기준: 2400x3600 해상도)
+    // 1번 사진: x=150, y=200, w=1000, h=1350
+    // 2번 사진: x=1250, y=200, w=1000, h=1350
+    // 3번 사진: x=150, y=1650, w=1000, h=1350
+    // 4번 사진: x=1250, y=1650, w=1000, h=1350
     const photoAreas = [
-      { x: 80.89 * scale, y: 68.90 * scale, width: (439.13 - 80.89) * scale, height: (589.84 - 68.90) * scale },  // 1번
-      { x: 80.89 * scale, y: 615.66 * scale, width: (439.13 - 80.89) * scale, height: (1136.60 - 615.66) * scale }, // 2번
-      { x: 464.98 * scale, y: 70.09 * scale, width: (823.22 - 464.98) * scale, height: (588.69 - 70.09) * scale },   // 3번
-      { x: 464.98 * scale, y: 615.66 * scale, width: (823.22 - 464.98) * scale, height: (1134.26 - 615.66) * scale }  // 4번
+      { x: 150, y: 200, width: 1000, height: 1350 },  // 1번 (좌상단)
+      { x: 1250, y: 200, width: 1000, height: 1350 }, // 2번 (우상단)
+      { x: 150, y: 1650, width: 1000, height: 1350 }, // 3번 (좌하단)
+      { x: 1250, y: 1650, width: 1000, height: 1350 } // 4번 (우하단)
     ];
 
-    // 4컷 사진 배치
+    // 4컷 사진 배치 (cover 방식: 비율 유지하며 영역 채우기)
     for (let i = 0; i < 4; i++) {
       try {
-        // Base64 이미지 로드 (processedPhotos 사용)
         const base64Data = processedPhotos[i].replace(/^data:image\/\w+;base64,/, '');
         const buffer = Buffer.from(base64Data, 'base64');
         const img = await loadImage(buffer);
 
         const area = photoAreas[i];
 
-        // 고품질 렌더링
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // 사진 그리기 (영역에 맞게 그리기)
-        ctx.drawImage(img, area.x, area.y, area.width, area.height);
+        // cover 방식: 원본 비율 유지, 영역에 맞게 크롭하여 채우기
+        const imgRatio = img.width / img.height;
+        const areaRatio = area.width / area.height;
+        let sx, sy, sw, sh;
 
-        console.log(`✓ Photo ${i + 1} placed at [${Math.round(area.x)}, ${Math.round(area.y)}]`);
+        if (imgRatio < areaRatio) {
+          // 이미지가 더 세로로 김 → 상하 크롭
+          sw = img.width;
+          sh = img.width / areaRatio;
+          sx = 0;
+          sy = (img.height - sh) / 2;
+        } else {
+          // 이미지가 더 가로로 김 → 좌우 크롭
+          sh = img.height;
+          sw = img.height * areaRatio;
+          sx = (img.width - sw) / 2;
+          sy = 0;
+        }
+
+        ctx.drawImage(img, sx, sy, sw, sh, area.x, area.y, area.width, area.height);
+
+        console.log(`✓ Photo ${i + 1} placed at [${Math.round(area.x)}, ${Math.round(area.y)}] (cover crop: ${Math.round(sx)},${Math.round(sy)} ${Math.round(sw)}x${Math.round(sh)})`);
       } catch (err) {
         console.error(`Failed to load image ${i}:`, err);
       }
@@ -120,7 +172,7 @@ export async function POST(request) {
 
     // 이미지 저장
     console.log('🔵 Converting canvas to buffer...');
-    const buffer = canvas.toBuffer('image/jpeg', { quality: 0.95 });
+    const buffer = canvas.toBuffer('image/jpeg', { quality: 0.98 });
     console.log('✅ Buffer created, size:', buffer.length, 'bytes');
 
     const filename = `lifefourcut_${Date.now()}.jpg`;

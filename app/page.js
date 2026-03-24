@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import './page.css';
+import { useState } from 'react';
+import './styles/index.css';
 
 // 컴포넌트 imports
 import IntroScreen from './components/IntroScreen';
@@ -11,37 +11,31 @@ import ShootingScreen from './components/ShootingScreen';
 import SelectScreen from './components/SelectScreen';
 import EditScreen from './components/EditScreen';
 import ResultScreen from './components/ResultScreen';
-import PrintPreviewModal from './components/PrintPreviewModal';
+import StickerScreen from './components/StickerScreen';
 import PrintSuccessModal from './components/PrintSuccessModal';
-import FilterTestScreen from './components/FilterTestScreen';
+import ScanningOverlay from './components/ScanningOverlay';
 
 // 상수 imports
 import { filters } from './constants/filters';
-import { frames } from './constants/frames';
-import { videoConstraints } from './constants/camera';
 
-// 유틸 imports
-import { captureAndCropImage, generatePrintPreview } from './utils/imageProcessing';
-import { applyFilter, combinePhotos, printImage as printImageAPI, convertImageUrlToBase64 } from './utils/apiService';
+// 훅 imports
+import { useCamera } from './hooks/useCamera';
+import { useShooting } from './hooks/useShooting';
+
+// 서비스 imports
+import { combinePhotos, applyFilter } from './utils/apiService';
+import { processPhotosWithFilters } from './services/photoProcessingService';
+import { isUploadAvailable, uploadPhoto } from './utils/uploadService';
 
 export default function Home() {
-  const webcamRef = useRef(null);
-  const photosRef = useRef([]);
-
-  // 상태 관리
+  // 화면 상태
   const [step, setStep] = useState('intro');
   const [selectedFrame, setSelectedFrame] = useState('classic');
-  const [capturedPhotos, setCapturedPhotos] = useState([]);
-  const [currentShot, setCurrentShot] = useState(0);
-  const [countdown, setCountdown] = useState(null);
   const [finalImage, setFinalImage] = useState(null);
-  const [cameraReady, setCameraReady] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('kpop-idol');
   const [isApplyingFilter, setIsApplyingFilter] = useState(false);
   const [filteredImage, setFilteredImage] = useState(null);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [showPrintPreview, setShowPrintPreview] = useState(false);
-  const [printPreviewImage, setPrintPreviewImage] = useState(null);
   const [selectedSlots, setSelectedSlots] = useState([null, null, null, null]);
   const [isCombining, setIsCombining] = useState(false);
   const [filteredPhotos, setFilteredPhotos] = useState([]);
@@ -49,22 +43,38 @@ export default function Home() {
   const [previewComposite, setPreviewComposite] = useState(null);
   const [editingSlotIndex, setEditingSlotIndex] = useState(null);
   const [slotFilters, setSlotFilters] = useState(['none', 'none', 'none', 'none']);
-  const [showBeforeAfter, setShowBeforeAfter] = useState(false);
   const [showPrintSuccess, setShowPrintSuccess] = useState(false);
+  const [printDone, setPrintDone] = useState(false);
+  const [qrUrl, setQrUrl] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [frameVariant, setFrameVariant] = useState('black');
+  const [placedStickers, setPlacedStickers] = useState([]);
 
   // AC'SCENT 연동 상태
-  const [customerData, setCustomerData] = useState(null); // PIN으로 조회된 고객 데이터
-  const [referenceImageUrl, setReferenceImageUrl] = useState(null); // 참조 이미지 URL
+  const [customerData, setCustomerData] = useState(null);
+  const [referenceImageUrl, setReferenceImageUrl] = useState(null);
+
+  // PIN 모드 판별 (촬영 횟수 결정에 사용)
+  const isPinMode = !!(referenceImageUrl && customerData);
+  const totalShots = isPinMode ? 3 : 6;
+
+  // 카메라 훅
+  const { webcamRef, streamRef, cameraMode, cameraReady, handleCameraReady } = useCamera();
+
+  // 촬영 훅
+  const {
+    capturedPhotos, setCapturedPhotos,
+    currentShot, countdown, startContinuousShooting, resetPhotos,
+  } = useShooting({ cameraReady, cameraMode, webcamRef, setStep, totalShots });
 
   // ========== PIN 관련 핸들러 ==========
-  const goToPin = () => {
-    setStep('pin');
-  };
+  const goToPin = () => setStep('pin');
 
   const handlePinVerified = (data) => {
     console.log('✅ PIN 인증 완료:', data.idolName);
     setCustomerData(data);
     setReferenceImageUrl(data.userImageUrl || null);
+    setSelectedSlots([null]); // PIN 모드: 1장만 선택
     goToReady();
   };
 
@@ -72,78 +82,14 @@ export default function Home() {
     console.log('⏭️ PIN 없이 진행');
     setCustomerData(null);
     setReferenceImageUrl(null);
+    setSelectedSlots([null, null, null, null]); // 일반 모드: 4장 선택
     goToReady();
   };
 
   // ========== 화면 전환 핸들러 ==========
   const goToReady = () => {
-    photosRef.current = [];
-    setCapturedPhotos([]);
-    setCurrentShot(0);
-    setCountdown(null);
-    // 🔥 카메라 상태 리셋 제거 - 계속 유지
-    // setCameraReady(false);
+    resetPhotos();
     setStep('ready');
-  };
-
-  const handleCameraReady = () => {
-    console.log('Camera ready - will stay loaded');
-    setCameraReady(true);
-  };
-
-  // ========== 촬영 로직 ==========
-  const startContinuousShooting = () => {
-    if (!cameraReady) {
-      alert('카메라가 준비되지 않았습니다. 잠시만 기다려주세요.');
-      return;
-    }
-    photosRef.current = [];
-    setCapturedPhotos([]);
-    setCurrentShot(0);
-    setStep('shooting');
-    takeNextShot(0);
-  };
-
-  const takeNextShot = (shotNumber) => {
-    if (shotNumber >= 6) {
-      setStep('select');
-      return;
-    }
-
-    console.log('Taking shot', shotNumber + 1);
-    setCurrentShot(shotNumber);
-    setCountdown(3);
-
-    setTimeout(() => {
-      setCountdown(2);
-      setTimeout(() => {
-        setCountdown(1);
-        setTimeout(() => {
-          setCountdown(null);
-          captureImage(shotNumber);
-        }, 1000);
-      }, 1000);
-    }, 1000);
-  };
-
-  const captureImage = async (shotNumber, retryCount = 0) => {
-    try {
-      const croppedImage = await captureAndCropImage(webcamRef);
-      photosRef.current.push(croppedImage);
-      setCapturedPhotos([...photosRef.current]);
-
-      setTimeout(() => {
-        takeNextShot(shotNumber + 1);
-      }, 2000);
-    } catch (error) {
-      console.error('캡처 실패:', error);
-      if (retryCount < 1) {
-        console.log('🔄 캡처 재시도...');
-        setTimeout(() => captureImage(shotNumber, retryCount + 1), 1000);
-      } else {
-        alert('사진 촬영에 실패했습니다. 카메라 연결을 확인해주세요.');
-      }
-    }
   };
 
   // ========== 사진 선택 로직 ==========
@@ -153,9 +99,10 @@ export default function Home() {
     setSelectedSlots(newSlots);
   };
 
+  // ========== 프리뷰 합성 ==========
   const createPreviewComposite = async () => {
     if (selectedSlots.includes(null)) {
-      alert('4개의 사진을 모두 선택해주세요!');
+      alert(isPinMode ? '사진을 선택해주세요!' : '4개의 사진을 모두 선택해주세요!');
       return;
     }
 
@@ -163,88 +110,35 @@ export default function Home() {
     setIsFilteringAll(true);
 
     try {
-      // 선택된 원본 사진 4장
       const selectedPhotos = selectedSlots.map(idx => capturedPhotos[idx]);
 
-      // 🔥 PIN 모드 vs 일반 모드 완전 분기
-      const isPinMode = !!(referenceImageUrl && customerData);
-      const results = [];
-
-      if (isPinMode) {
-        // ===== PIN 모드: 참조 이미지 합성만 (admin 필터 완전 무시) =====
-        console.log('🔗 AC\'SCENT PIN 모드 - 참조 이미지 합성 전용');
-        console.log('🔗 참조 이미지:', referenceImageUrl);
-        console.log('🔗 캐릭터:', customerData.idolName);
-
-        for (let index = 0; index < selectedPhotos.length; index++) {
-          const photo = selectedPhotos[index];
-          console.log(`슬롯 ${index + 1}: 참조 이미지 합성 중...`);
-
-          const result = await applyFilter(photo, 'acscent-composite', referenceImageUrl, customerData);
-          results.push(result);
-          if (index < selectedPhotos.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
-      } else {
-        // ===== 일반 모드: admin 필터 설정 사용 (참조 이미지 없음) =====
-        const savedConfig = localStorage.getItem('photoboothFilters');
-
-        if (!savedConfig) {
+      let processed;
+      try {
+        processed = await processPhotosWithFilters({
+          selectedPhotos, isPinMode, referenceImageUrl, customerData,
+        });
+      } catch (error) {
+        if (error.message === 'FILTER_CONFIG_MISSING') {
           alert('⚠️ 필터 설정이 없습니다.\n/admin 페이지에서 필터를 설정해주세요.');
-          setIsCombining(false);
-          setIsFilteringAll(false);
           return;
         }
-
-        const config = JSON.parse(savedConfig);
-        const slotAssignment = config.slotAssignment;
-        console.log('🎨 일반 모드 - 필터 설정:', slotAssignment);
-
-        for (let index = 0; index < selectedPhotos.length; index++) {
-          const photo = selectedPhotos[index];
-          const filterId = slotAssignment[index];
-          console.log(`슬롯 ${index + 1}: ${filterId} 필터 적용 중...`);
-
-          if (filterId === 'none') {
-            results.push({ success: true, image: photo });
-          } else {
-            const result = await applyFilter(photo, filterId, null, null);
-            results.push(result);
-            if (index < selectedPhotos.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 500));
-            }
-          }
-        }
+        throw error;
       }
-
-      // 실패한 필터가 있는지 확인
-      const failedCount = results.filter(r => !r.success).length;
-      if (failedCount > 0) {
-        console.warn(`⚠️ ${failedCount}개 적용 실패`);
-      }
-
-      // 필터 적용된 이미지 배열 (실패 시 원본 사용)
-      const filtered = results.map((result, index) =>
-        result.success ? result.image : selectedPhotos[index]
-      );
 
       console.log('✅ 처리 완료');
-      setFilteredPhotos(filtered);
-      setSlotFilters(isPinMode
-        ? ['acscent-composite', 'acscent-composite', 'acscent-composite', 'acscent-composite']
-        : (JSON.parse(localStorage.getItem('photoboothFilters'))?.slotAssignment || ['none','none','none','none'])
-      );
+      setFilteredPhotos(processed.filteredPhotos);
+      setSlotFilters(processed.slotFilters);
 
-      // 🔥 4컷 합성
+      // 4컷 합성
       console.log('🖼️ 4컷 합성 시작...');
-      const result = await combinePhotos(filtered, selectedFrame, 'none');
+      const customText = customerData?.idolName || '';
+      const result = await combinePhotos(processed.filteredPhotos, selectedFrame, 'none', customText, frameVariant);
 
       if (result.success) {
         console.log('✅ 합성 완료');
         setPreviewComposite(result.path);
-        setFinalImage(result.path); // 🔥 바로 finalImage에 저장
-        setStep('result'); // 🔥 EditScreen 건너뛰고 바로 ResultScreen
+        setFinalImage(result.path);
+        setStep('sticker');
       } else {
         alert('합성 실패: ' + result.message);
       }
@@ -268,8 +162,6 @@ export default function Home() {
         const newFiltered = [...filteredPhotos];
         newFiltered[slotIndex] = originalPhoto;
         setFilteredPhotos(newFiltered);
-
-        // 🔥 업데이트된 배열을 직접 전달하여 즉시 합성
         await updateComposite(newFiltered);
       } else {
         const result = await applyFilter(originalPhoto, filterId);
@@ -283,7 +175,6 @@ export default function Home() {
           newFilters[slotIndex] = filterId;
           setSlotFilters(newFilters);
 
-          // 🔥 업데이트된 배열을 직접 전달하여 즉시 합성
           await updateComposite(newFiltered);
         } else {
           alert('필터 적용 실패: ' + result.message);
@@ -298,13 +189,15 @@ export default function Home() {
     }
   };
 
-  const updateComposite = async (photosToCompose = null) => {
+  const updateComposite = async (photosToCompose = null, variant = null) => {
     try {
-      // 전달된 배열이 있으면 사용, 없으면 현재 state 사용
       const photosArray = photosToCompose || filteredPhotos;
-      const result = await combinePhotos(photosArray, selectedFrame, 'none');
+      const customText = customerData?.idolName || '';
+      const v = variant ?? frameVariant;
+      const result = await combinePhotos(photosArray, selectedFrame, 'none', customText, v);
       if (result.success) {
         setPreviewComposite(result.path);
+        setFinalImage(result.path);
       }
     } catch (error) {
       console.error('합성 업데이트 실패:', error);
@@ -314,75 +207,63 @@ export default function Home() {
   const confirmFinalImage = () => {
     setFinalImage(previewComposite);
     setStep('result');
+    startPhotoUpload(previewComposite);
+  };
+
+  // ========== 프레임 변형 핸들러 ==========
+  const handleFrameVariantChange = async (variant) => {
+    setFrameVariant(variant);
+    await updateComposite(null, variant);
+  };
+
+  // ========== 스티커 핸들러 ==========
+  const handleStickerComplete = (newFinalImage) => {
+    setFinalImage(newFinalImage);
+    setStep('result');
+    startPhotoUpload(newFinalImage);
+  };
+
+  const handleStickerSkip = () => {
+    setFinalImage(previewComposite);
+    setPlacedStickers([]);
+    setStep('result');
+    startPhotoUpload(previewComposite);
+  };
+
+  // ========== QR 코드 업로드 ==========
+  const startPhotoUpload = async (image) => {
+    if (!isUploadAvailable()) return;
+    setIsUploading(true);
+    try {
+      const { url } = await uploadPhoto(image);
+      setQrUrl(url);
+    } catch (err) {
+      console.warn('[QR] Upload failed:', err.message);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // ========== 프린터 로직 ==========
-  const handleGeneratePrintPreview = async () => {
-    const imageToPrint = finalImage || filteredImage || (capturedPhotos.length > 0 ? capturedPhotos[0] : null);
-    
-    if (!imageToPrint) {
-      alert('미리보기할 이미지가 없습니다.');
-      return;
-    }
-
-    try {
-      const previewImage = await generatePrintPreview(imageToPrint);
-      setPrintPreviewImage(previewImage);
-      setShowPrintPreview(true);
-    } catch (error) {
-      console.error('미리보기 생성 실패:', error);
-      alert('미리보기 생성 중 오류가 발생했습니다.');
-    }
-  };
-
   const handlePrintImage = async () => {
-    console.log('🖨️ printImage 함수 시작');
-
-    let imageToPrint;
-
-    if (finalImage) {
-      try {
-        imageToPrint = await convertImageUrlToBase64(finalImage);
-      } catch (err) {
-        console.error('이미지 로드 실패:', err);
-        alert('이미지를 불러올 수 없습니다.');
-        return;
-      }
-    } else {
-      imageToPrint = filteredImage || (capturedPhotos.length > 0 ? capturedPhotos[0] : null);
-    }
-
-    if (!imageToPrint) {
-      console.log('❌ 출력할 이미지 없음');
-      alert('출력할 이미지가 없습니다.');
-      return;
-    }
-
-    console.log('📤 프린터 API 호출 준비');
+    if (!finalImage) return;
     setIsPrinting(true);
-
     try {
-      const result = await printImageAPI(imageToPrint);
-
+      const result = await window.electronAPI.printImage(finalImage);
       if (result.success) {
-        console.log('✅ 프린터 출력 성공');
-        // 출력 성공 모달 표시
         setShowPrintSuccess(true);
-        // 2초 후 모달 닫고 처음 화면으로 이동
         setTimeout(() => {
           setShowPrintSuccess(false);
-          restart();
+          setPrintDone(true);
         }, 2000);
       } else {
-        console.log('❌ 프린터 출력 실패:', result.message);
-        alert('❌ 출력 실패: ' + result.message);
+        alert(result.message);
       }
     } catch (error) {
-      console.error('❌ Print error:', error);
-      alert('출력 중 오류가 발생했습니다.');
+      console.error('[Print] IPC error:', error);
+      alert('프린터 연결에 문제가 발생했습니다.');
     } finally {
       setIsPrinting(false);
-      console.log('🏁 printImage 함수 종료');
     }
   };
 
@@ -398,18 +279,19 @@ export default function Home() {
   const restart = () => {
     setStep('intro');
     setCapturedPhotos([]);
-    setCurrentShot(0);
     setFinalImage(null);
     setFilteredImage(null);
-    photosRef.current = [];
-    // 🔥 카메라 상태 유지 - 재시작해도 계속 로드된 상태
-    // setCameraReady(false);
-    setSelectedSlots([null, null, null, null]);
+    resetPhotos();
+    setSelectedSlots([null, null, null, null]); // intro로 돌아가므로 기본값
     setFilteredPhotos([]);
     setPreviewComposite(null);
     setEditingSlotIndex(null);
     setSlotFilters(['none', 'none', 'none', 'none']);
-    // AC'SCENT 연동 데이터 초기화
+    setPrintDone(false);
+    setQrUrl(null);
+    setIsUploading(false);
+    setFrameVariant('black');
+    setPlacedStickers([]);
     setCustomerData(null);
     setReferenceImageUrl(null);
   };
@@ -417,7 +299,9 @@ export default function Home() {
   // ========== 렌더링 ==========
   return (
     <div className="photobooth">
-      {step === 'intro' && <IntroScreen onStart={goToPin} onFilterTest={() => setStep('filterTest')} />}
+      {step === 'intro' && (
+        <IntroScreen onStart={goToPin} streamRef={streamRef} cameraMode={cameraMode} cameraReady={cameraReady} />
+      )}
 
       {step === 'pin' && (
         <PinScreen
@@ -427,27 +311,29 @@ export default function Home() {
         />
       )}
 
-      {step === 'filterTest' && <FilterTestScreen onBack={() => setStep('intro')} />}
-
       {step === 'ready' && (
         <ReadyScreen
           webcamRef={webcamRef}
-          videoConstraints={videoConstraints}
+          stream={streamRef.current}
+          cameraMode={cameraMode}
           countdown={countdown}
           cameraReady={cameraReady}
           onCameraReady={handleCameraReady}
           onStartShooting={startContinuousShooting}
           onBack={() => setStep('intro')}
+          totalShots={totalShots}
         />
       )}
 
       {step === 'shooting' && (
         <ShootingScreen
           webcamRef={webcamRef}
-          videoConstraints={videoConstraints}
+          stream={streamRef.current}
+          cameraMode={cameraMode}
           currentShot={currentShot}
           countdown={countdown}
           capturedPhotos={capturedPhotos}
+          totalShots={totalShots}
         />
       )}
 
@@ -457,12 +343,12 @@ export default function Home() {
           selectedSlots={selectedSlots}
           onSelectImage={selectImageForSlot}
           onCreatePreview={createPreviewComposite}
-          onResetSelection={() => setSelectedSlots([null, null, null, null])}
+          onResetSelection={() => setSelectedSlots(isPinMode ? [null] : [null, null, null, null])}
           onRetake={() => {
             setStep('ready');
             setCapturedPhotos([]);
-            photosRef.current = [];
-            setSelectedSlots([null, null, null, null]);
+            resetPhotos();
+            setSelectedSlots(isPinMode ? [null] : [null, null, null, null]);
           }}
           isCombining={isCombining}
           customerData={customerData}
@@ -479,14 +365,28 @@ export default function Home() {
           slotFilters={slotFilters}
           filters={filters}
           isApplyingFilter={isApplyingFilter}
+          customerData={customerData}
           onSlotClick={(idx) => setEditingSlotIndex(editingSlotIndex === idx ? null : idx)}
           onApplyFilter={applyFilterToSlot}
           onConfirm={confirmFinalImage}
           onBack={() => {
-                setStep('select');
-                setEditingSlotIndex(null);
-                setSlotFilters(['none', 'none', 'none', 'none']);
-              }}
+            setStep('select');
+            setEditingSlotIndex(null);
+            setSlotFilters(isPinMode ? ['none'] : ['none', 'none', 'none', 'none']);
+          }}
+        />
+      )}
+
+      {step === 'sticker' && (
+        <StickerScreen
+          finalImage={previewComposite}
+          onComplete={handleStickerComplete}
+          onSkip={handleStickerSkip}
+          frameVariant={frameVariant}
+          onFrameVariantChange={handleFrameVariantChange}
+          placedStickers={placedStickers}
+          setPlacedStickers={setPlacedStickers}
+          customerData={customerData}
         />
       )}
 
@@ -494,23 +394,28 @@ export default function Home() {
         <ResultScreen
           finalImage={finalImage}
           onDownload={downloadImage}
-          onPrintPreview={handleGeneratePrintPreview}
           onPrint={handlePrintImage}
           onRestart={restart}
+          onBack={() => setStep('sticker')}
           isPrinting={isPrinting}
+          printDone={printDone}
+          qrUrl={qrUrl}
+          isUploading={isUploading}
         />
       )}
-
-      <PrintPreviewModal
-        show={showPrintPreview}
-        previewImage={printPreviewImage}
-        onPrint={handlePrintImage}
-        onClose={() => setShowPrintPreview(false)}
-      />
 
       <PrintSuccessModal
         show={showPrintSuccess}
         onClose={() => setShowPrintSuccess(false)}
+      />
+
+      <ScanningOverlay
+        isVisible={isCombining || isApplyingFilter}
+        mode={isCombining ? 'full' : 'single'}
+        isPinMode={isPinMode}
+        streamRef={streamRef}
+        cameraMode={cameraMode}
+        cameraReady={cameraReady}
       />
     </div>
   );

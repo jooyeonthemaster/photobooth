@@ -1,0 +1,376 @@
+/* ========== 스티커 꾸미기 화면 ========== */
+.sticker-screen {
+  display: flex;
+  flex-direction: row;
+  width: 100vw;
+  height: 100vh;
+  background: #050505;
+  overflow: hidden;
+}
+
+/* 왼쪽: 캔버스 */
+.sticker-canvas-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  min-width: 0;
+}
+
+.sticker-canvas-area canvas {
+  touch-action: none !important;
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(0, 243, 255, 0.15), 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* 오른쪽 패널 */
+.sticker-right-panel {
+  width: 560px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: rgba(10, 10, 10, 0.95);
+  border-left: 1px solid rgba(0, 243, 255, 0.2);
+}
+
+/* 색상 팔레트 */
+.sticker-color-palette {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 243, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.color-palette-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.color-palette-options {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+}
+
+.color-dot {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.color-dot:active {
+  transform: scale(0.9);
+}
+
+.color-dot.active {
+  border-color: #fff;
+  box-shadow: 0 0 16px currentColor, 0 0 4px rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+/* 최애 이름 스티커 썸네일 */
+.idol-name-thumb {
+  background: rgba(0, 243, 255, 0.08) !important;
+  border-color: rgba(0, 243, 255, 0.25) !important;
+}
+
+.idol-name-thumb:active {
+  background: rgba(0, 243, 255, 0.15) !important;
+}
+
+.idol-name-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #00f3ff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+  letter-spacing: 1px;
+  text-align: center;
+  word-break: keep-all;
+}
+
+/* 스티커 팔레트 */
+.sticker-palette {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sticker-category-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 20px 20px 16px;
+  flex-wrap: wrap;
+}
+
+.sticker-category-tab {
+  padding: 12px 22px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 25px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sticker-category-tab.active {
+  background: rgba(0, 243, 255, 0.15);
+  border-color: #00f3ff;
+  color: #00f3ff;
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+}
+
+.sticker-category-tab:active {
+  transform: scale(0.93);
+}
+
+/* 스티커 그리드 (세로 스크롤) */
+.sticker-items-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-content: start;
+  gap: 14px;
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 243, 255, 0.3) transparent;
+}
+
+.sticker-items-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sticker-items-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sticker-items-grid::-webkit-scrollbar-thumb {
+  background: rgba(0, 243, 255, 0.3);
+  border-radius: 3px;
+}
+
+.sticker-thumb {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+}
+
+.sticker-thumb:active {
+  transform: scale(0.9);
+  border-color: #00f3ff;
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+}
+
+.sticker-thumb img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 75%;
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* 툴바 */
+/* 프레임 색상 선택 */
+.frame-variant-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid rgba(0, 243, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.frame-variant-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.frame-variant-options {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.frame-variant-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 2px;
+  border: 2px solid transparent;
+}
+
+.frame-variant-btn.variant-black {
+  background: #1a1a1a;
+  color: #aaa;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.frame-variant-btn.variant-black.active {
+  border-color: #00f3ff;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(0, 243, 255, 0.3);
+}
+
+.frame-variant-btn.variant-white {
+  background: #e8e8ec;
+  color: #888;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.frame-variant-btn.variant-white.active {
+  border-color: #00f3ff;
+  color: #222;
+  box-shadow: 0 0 12px rgba(0, 243, 255, 0.3);
+}
+
+.frame-variant-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.frame-variant-loading {
+  color: rgba(0, 243, 255, 0.6);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.sticker-toolbar {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  box-sizing: border-box;
+  border-top: 1px solid rgba(0, 243, 255, 0.15);
+}
+
+.sticker-toolbar button {
+  flex: 1;
+  padding: 18px 12px;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  letter-spacing: 1px;
+}
+
+.sticker-toolbar button:active {
+  transform: scale(0.95);
+}
+
+.sticker-toolbar button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sticker-skip-btn {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.sticker-skip-btn:active:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sticker-reset-btn {
+  background: transparent;
+  border: 2px solid rgba(255, 100, 100, 0.3);
+  color: rgba(255, 100, 100, 0.7);
+}
+
+.sticker-reset-btn:active:not(:disabled) {
+  background: rgba(255, 100, 100, 0.1);
+  border-color: rgba(255, 100, 100, 0.5);
+}
+
+.sticker-delete-btn {
+  background: transparent;
+  border: 2px solid rgba(255, 150, 50, 0.3);
+  color: rgba(255, 150, 50, 0.7);
+}
+
+.sticker-delete-btn:active:not(:disabled) {
+  background: rgba(255, 150, 50, 0.1);
+  border-color: rgba(255, 150, 50, 0.5);
+}
+
+.sticker-done-btn {
+  background: #00f3ff;
+  border: none;
+  color: #000;
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+}
+
+.sticker-done-btn:active:not(:disabled) {
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
+  background: #33f7ff;
+}
+
+/* 내보내기 로딩 오버레이 */
+.sticker-export-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.sticker-export-overlay p {
+  color: #00f3ff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 16px;
+  letter-spacing: 2px;
+}

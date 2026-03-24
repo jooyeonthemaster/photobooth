@@ -1,0 +1,385 @@
+/* ========== 스캐닝 오버레이 (ScanningOverlay) ========== */
+
+/* --- 오버레이 컨테이너 --- */
+.scanning-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  animation: fadeIn 0.5s ease-out;
+  overflow: hidden;
+}
+
+/* --- 배경 (인트로 그리드 패턴 재사용) --- */
+.scanning-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(5, 5, 5, 0.95);
+  background-image:
+    linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+  background-size: 30px 30px;
+  animation: scanGridPulse 4s ease-in-out infinite;
+}
+
+/* --- 로봇 눈 컨테이너 --- */
+.scanning-eyes-container {
+  display: flex;
+  gap: 12vw;
+  margin-top: 10vh;
+  z-index: 3;
+  animation: scanEyesDrop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* --- 개별 눈 (인트로 축소 버전) --- */
+.scanning-eye {
+  width: 14vw;
+  height: 14vw;
+  max-width: 200px;
+  max-height: 200px;
+  background: #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.8vw solid #222;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 1);
+  position: relative;
+}
+
+/* --- 동공 --- */
+.scanning-pupil {
+  width: 8vw;
+  height: 8vw;
+  max-width: 120px;
+  max-height: 120px;
+  background: #00f3ff;
+  border-radius: 50%;
+  box-shadow: 0 0 60px #00f3ff, 0 0 120px #00f3ff, inset 0 0 40px #fff;
+  position: relative;
+  animation: scanPupilPulse 2s ease-in-out infinite;
+}
+
+/* --- 눈 하이라이트 --- */
+.scanning-sparkle {
+  position: absolute;
+  top: 10%;
+  right: 10%;
+  width: 2vw;
+  height: 2vw;
+  max-width: 30px;
+  max-height: 30px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 20px #fff;
+}
+
+/* --- 레이저 빔 컨테이너 --- */
+.scanning-laser-container {
+  position: absolute;
+  top: calc(10vh + min(14vw, 200px));
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 10vh - min(14vw, 200px));
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* --- 레이저 빔 (눈에서 V자 확산) --- */
+.scanning-laser-beam {
+  position: absolute;
+  top: 0;
+  width: 40vw;
+  height: 100%;
+  opacity: 0.15;
+  animation: laserPulse 2s ease-in-out infinite;
+}
+
+.scanning-laser-beam.left {
+  /* 왼쪽 눈 중심(50% - 6vw - min(7vw,100px))에서 빔 폭 절반(20vw)을 뺌 */
+  left: calc(50% - 26vw - min(7vw, 100px));
+  background: linear-gradient(
+    180deg,
+    #00f3ff 0%,
+    rgba(0, 243, 255, 0.08) 40%,
+    transparent 100%
+  );
+  clip-path: polygon(45% 0%, 55% 0%, 100% 100%, 0% 100%);
+}
+
+.scanning-laser-beam.right {
+  /* 오른쪽 눈 중심(50% + 6vw + min(7vw,100px))에서 빔 폭 절반(20vw)을 뺌 */
+  left: calc(50% - 14vw + min(7vw, 100px));
+  background: linear-gradient(
+    180deg,
+    #00f3ff 0%,
+    rgba(0, 243, 255, 0.08) 40%,
+    transparent 100%
+  );
+  clip-path: polygon(45% 0%, 55% 0%, 100% 100%, 0% 100%);
+}
+
+/* --- 수평 스캔 라인 --- */
+.scanning-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #00f3ff;
+  box-shadow:
+    0 0 10px #00f3ff,
+    0 0 30px #00f3ff,
+    0 0 60px rgba(0, 243, 255, 0.5),
+    0 -10px 20px rgba(0, 243, 255, 0.1),
+    0 10px 20px rgba(0, 243, 255, 0.1);
+  z-index: 4;
+  animation: scanLineDown 3s ease-in-out infinite;
+  animation-delay: 0.8s;
+  opacity: 0;
+}
+
+/* 스캔 라인 잔상 */
+.scanning-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 5%;
+  width: 90%;
+  height: 40px;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 243, 255, 0.15) 0%,
+    transparent 100%
+  );
+  transform: translateY(-100%);
+}
+
+/* --- 텍스트 영역 --- */
+.scanning-text-container {
+  position: absolute;
+  bottom: 15vh;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 5;
+}
+
+.scanning-phase-text {
+  color: #00f3ff;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-shadow: 0 0 20px #00f3ff, 0 0 40px rgba(0, 243, 255, 0.5);
+  margin: 0 0 1.5rem 0;
+  font-family: 'Segoe UI', sans-serif;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+/* 글리치 이펙트 (텍스트 전환 시) */
+.glitch-active .scanning-phase-text {
+  animation: glitchText 0.4s steps(2) forwards;
+}
+
+/* --- 진행 도트 --- */
+.scanning-progress-dots {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.scanning-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(0, 243, 255, 0.2);
+  border: 2px solid rgba(0, 243, 255, 0.3);
+  transition: all 0.4s ease;
+}
+
+.scanning-dot.active {
+  background: #00f3ff;
+  border-color: #00f3ff;
+  box-shadow: 0 0 10px #00f3ff;
+}
+
+/* --- 파티클 --- */
+.scanning-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.scanning-particle {
+  position: absolute;
+  bottom: -10px;
+  width: 3px;
+  height: 3px;
+  background: #00f3ff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #00f3ff;
+  opacity: 0;
+  animation: particleFloat linear infinite;
+}
+
+
+/* ========== Keyframes ========== */
+
+/* 눈 진입: 위에서 바운스 드롭 */
+@keyframes scanEyesDrop {
+  0% {
+    transform: translateY(-30vh);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(10px);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 스캔 라인: 위 → 아래 반복 */
+@keyframes scanLineDown {
+  0% {
+    top: calc(10vh + min(14vw, 200px));
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 95vh;
+    opacity: 0;
+  }
+}
+
+/* 레이저 빔 맥박 */
+@keyframes laserPulse {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* 동공 맥박 */
+@keyframes scanPupilPulse {
+  0%, 100% {
+    box-shadow: 0 0 60px #00f3ff, 0 0 120px #00f3ff, inset 0 0 40px #fff;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 80px #00f3ff, 0 0 160px #00f3ff, inset 0 0 60px #fff;
+    transform: scale(1.05);
+  }
+}
+
+/* 배경 그리드 맥박 */
+@keyframes scanGridPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* 글리치 텍스트 */
+@keyframes glitchText {
+  0% {
+    transform: translate(0);
+    text-shadow: 0 0 20px #00f3ff;
+    clip-path: inset(0 0 0 0);
+  }
+  20% {
+    transform: translate(-3px, 2px);
+    text-shadow: 3px 0 #ff0040, -3px 0 #00f3ff;
+    clip-path: inset(20% 0 40% 0);
+  }
+  40% {
+    transform: translate(3px, -2px);
+    text-shadow: -3px 0 #ff0040, 3px 0 #00f3ff;
+    clip-path: inset(60% 0 10% 0);
+  }
+  60% {
+    transform: translate(-2px, 1px);
+    text-shadow: 2px 0 #ff0040, -2px 0 #00f3ff;
+    clip-path: inset(10% 0 60% 0);
+  }
+  80% {
+    transform: translate(1px, -1px);
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    transform: translate(0);
+    text-shadow: 0 0 20px #00f3ff, 0 0 40px rgba(0, 243, 255, 0.5);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* 파티클 부유 */
+@keyframes particleFloat {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-100vh);
+    opacity: 0;
+  }
+}
+
+/* 스캐닝 마스코트 */
+.scanning-mascot {
+  position: absolute;
+  bottom: 5vh;
+  left: 50%;
+  margin-left: -7.5vh;
+  z-index: 10002;
+  pointer-events: none;
+}
+
+.scanning-mascot img {
+  height: 18vh;
+  width: auto;
+  filter: drop-shadow(0 0 30px rgba(0, 243, 255, 0.5));
+  animation: mascotScanBob 2s ease-in-out infinite;
+}
+
+@keyframes mascotScanBob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}

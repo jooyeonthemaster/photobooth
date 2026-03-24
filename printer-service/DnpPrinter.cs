@@ -117,8 +117,41 @@ namespace DnpPrinterService
                 e.Graphics.CompositingQuality = CompositingQuality.HighQuality;
                 e.Graphics.SmoothingMode = SmoothingMode.HighQuality;
 
-                // 이미지를 PageBounds 전체에 그대로 출력 (회전 없음, 크롭 없음)
-                e.Graphics.DrawImage(image, e.PageBounds);
+                Image printImage = image;
+                bool isImagePortrait = image.Height > image.Width;
+                bool isPagePortrait = e.PageBounds.Height > e.PageBounds.Width;
+
+                Console.WriteLine("이미지 방향: " + (isImagePortrait ? "세로" : "가로"));
+                Console.WriteLine("페이지 방향: " + (isPagePortrait ? "세로" : "가로"));
+
+                // 이미지와 페이지 방향이 다르면 이미지를 90도 회전
+                if (isImagePortrait != isPagePortrait)
+                {
+                    Console.WriteLine("방향 불일치 → 이미지 90도 회전");
+                    printImage = RotateImage(image, 90);
+                    Console.WriteLine("회전 후 크기: " + printImage.Width + " x " + printImage.Height);
+                }
+
+                // 비율 유지하며 페이지에 맞추기 (Fit)
+                float pageW = e.PageBounds.Width;
+                float pageH = e.PageBounds.Height;
+                float imgW = printImage.Width;
+                float imgH = printImage.Height;
+
+                float scale = Math.Min(pageW / imgW, pageH / imgH);
+                float drawW = imgW * scale;
+                float drawH = imgH * scale;
+                float drawX = (pageW - drawW) / 2f;
+                float drawY = (pageH - drawH) / 2f;
+
+                Console.WriteLine("출력 영역: " + drawX + ", " + drawY + ", " + drawW + " x " + drawH);
+                e.Graphics.DrawImage(printImage, drawX, drawY, drawW, drawH);
+
+                // 회전으로 새 이미지를 생성했으면 해제
+                if (printImage != image)
+                {
+                    printImage.Dispose();
+                }
 
                 Console.WriteLine("이미지 출력 완료");
                 e.HasMorePages = false;

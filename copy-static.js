@@ -27,6 +27,69 @@ if (fs.existsSync(staticSource)) {
   console.log('⚠️  .next/static not found - skipping');
 }
 
+// public/ 폴더 복사 (프레임 SVG 등)
+const publicSource = path.join(__dirname, 'public');
+const publicDest = path.join(__dirname, '.next', 'standalone', 'public');
+if (fs.existsSync(publicSource)) {
+  console.log('🖼️  Copying public/ ...');
+  fs.cpSync(publicSource, publicDest, { recursive: true });
+  console.log('✅ Public files copied successfully!');
+} else {
+  console.log('⚠️  public/ not found - skipping');
+}
+
+// printer-service/ 폴더 복사
+const printerSource = path.join(__dirname, 'printer-service');
+const printerDest = path.join(__dirname, '.next', 'standalone', 'printer-service');
+if (fs.existsSync(printerSource)) {
+  console.log('🖨️  Copying printer-service/ ...');
+  fs.cpSync(printerSource, printerDest, { recursive: true });
+  console.log('✅ Printer service copied successfully!');
+} else {
+  console.log('⚠️  printer-service/ not found - skipping');
+}
+
+// edsdk-dlls/ 폴더 복사 (Canon EDSDK DLLs)
+const edsdkSource = path.join(__dirname, 'edsdk-dlls');
+const edsdkDest = path.join(__dirname, '.next', 'standalone', 'edsdk-dlls');
+if (fs.existsSync(edsdkSource)) {
+  console.log('📷 Copying edsdk-dlls/ ...');
+  fs.cpSync(edsdkSource, edsdkDest, { recursive: true });
+  console.log('✅ EDSDK DLLs copied successfully!');
+} else {
+  console.log('⚠️  edsdk-dlls/ not found - EDSDK camera will not work');
+}
+
+// MediaPipe WASM + 모델 파일 복사
+const mediapipeWasmSource = path.join(__dirname, 'node_modules', '@mediapipe', 'tasks-vision', 'wasm');
+const mediapipeWasmDest = path.join(__dirname, '.next', 'standalone', 'public', 'mediapipe', 'wasm');
+const mediapipeModelSource = path.join(__dirname, 'public', 'mediapipe', 'hand_landmarker.task');
+const mediapipeModelDest = path.join(__dirname, '.next', 'standalone', 'public', 'mediapipe', 'hand_landmarker.task');
+
+if (fs.existsSync(mediapipeWasmSource)) {
+  console.log('🤖 Copying MediaPipe WASM files...');
+  fs.mkdirSync(path.dirname(mediapipeWasmDest), { recursive: true });
+  fs.cpSync(mediapipeWasmSource, mediapipeWasmDest, { recursive: true });
+  console.log('✅ MediaPipe WASM copied!');
+} else {
+  console.log('⚠️  MediaPipe WASM not found - hand tracking will not work');
+}
+
+if (fs.existsSync(mediapipeModelSource)) {
+  console.log('🤖 Copying MediaPipe hand model...');
+  fs.mkdirSync(path.dirname(mediapipeModelDest), { recursive: true });
+  fs.copyFileSync(mediapipeModelSource, mediapipeModelDest);
+  console.log('✅ MediaPipe hand model copied!');
+}
+
+// MediaPipe vision bundle JS 복사
+const visionBundleSource = path.join(__dirname, 'node_modules', '@mediapipe', 'tasks-vision', 'vision_bundle.mjs');
+const visionBundleDest = path.join(__dirname, '.next', 'standalone', 'public', 'mediapipe', 'vision_bundle.mjs');
+if (fs.existsSync(visionBundleSource)) {
+  fs.copyFileSync(visionBundleSource, visionBundleDest);
+  console.log('✅ MediaPipe vision bundle copied!');
+}
+
 // .env.local 복사
 if (fs.existsSync(envSource)) {
   console.log('🔑 Copying .env.local...');
