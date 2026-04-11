@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   app: {
     isElectron: true,
+    quit: () => ipcRenderer.send('admin-force-quit'),
   },
   camera: {
     getMode: () => ipcRenderer.invoke('camera:getMode'),
@@ -18,6 +19,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.on('camera:mode-changed', (_event, mode) => callback(mode));
     },
   },
-  printImage: (base64Image) => ipcRenderer.invoke('printer:print', base64Image),
+  printImage: (base64Image, copies) => ipcRenderer.invoke('printer:print', base64Image, copies),
   checkPrinter: () => ipcRenderer.invoke('printer:check'),
 });

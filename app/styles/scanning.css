@@ -383,3 +383,57 @@
     transform: translateY(-15px);
   }
 }
+
+/* --- 5분 타임아웃 탈출 버튼 --- */
+.scanning-escape-btn {
+  position: absolute;
+  bottom: 6vh;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 18px 42px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid #00f3ff;
+  color: #00f3ff;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  border-radius: 999px;
+  cursor: pointer;
+  z-index: 10003;
+  font-family: 'Segoe UI', sans-serif;
+  box-shadow:
+    0 0 24px rgba(0, 243, 255, 0.6),
+    0 0 48px rgba(0, 243, 255, 0.3);
+  text-shadow: 0 0 12px rgba(0, 243, 255, 0.8);
+  animation: escapeBtnFadeIn 0.6s ease-out, escapeBtnPulse 2s ease-in-out 0.6s infinite;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.scanning-escape-btn:active {
+  transform: translateX(-50%) scale(0.95);
+}
+
+@keyframes escapeBtnFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes escapeBtnPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 24px rgba(0, 243, 255, 0.6),
+      0 0 48px rgba(0, 243, 255, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 36px rgba(0, 243, 255, 0.9),
+      0 0 72px rgba(0, 243, 255, 0.5);
+  }
+}

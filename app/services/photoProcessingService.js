@@ -1,4 +1,4 @@
-import { applyFilter, applyFilterGrid, createPhotoGrid, splitPhotoGrid } from '../utils/apiService';
+import { applyFilter, applyFilterGrid, createPhotoGrid, splitPhotoGrid, compressImage } from '../utils/apiService';
 
 /**
  * 선택된 사진에 필터를 적용하는 서비스 함수
@@ -19,28 +19,22 @@ export async function processPhotosWithFilters({
     console.log('🔗 참조 이미지:', referenceImageUrl);
     console.log('🔗 캐릭터:', customerData.idolName);
 
-    try {
-      // 1장을 직접 Seedream에 전달 (그리드 합성 생략)
-      console.log('📸 PIN 모드: 1장 → Seedream 4컷 생성 중...');
-      const gridResult = await applyFilterGrid(singlePhoto, 'acscent-composite', referenceImageUrl, customerData);
+    // 입력 이미지 압축 (1600x2400 → 1200x1800, 전송/처리 시간 단축)
+    console.log('📸 PIN 모드: 입력 이미지 압축 중...');
+    const compressedPhoto = await compressImage(singlePhoto, 1200, 0.85);
 
-      if (gridResult.success) {
-        console.log('🔲 PIN 모드: 결과 4분할 중...');
-        const splitImages = await splitPhotoGrid(gridResult.image);
-        results.push(...splitImages.map(img => ({ success: true, image: img })));
-        console.log('✅ PIN 모드 완료 - 4컷 생성 적용됨');
-      } else {
-        throw new Error(gridResult.message || 'Grid generation failed');
-      }
-    } catch (gridError) {
-      console.warn('⚠️ PIN 4컷 생성 실패, 싱글 모드로 전환:', gridError.message);
-      // fallback: 1장으로 단일 합성
-      const result = await applyFilter(singlePhoto, 'acscent-composite', referenceImageUrl, customerData);
-      // 단일 결과를 4장으로 복제
-      for (let i = 0; i < 4; i++) {
-        results.push(result);
-      }
+    console.log('📸 PIN 모드: 1장 → Seedream 4컷 생성 중...');
+    const gridResult = await applyFilterGrid(compressedPhoto, 'acscent-composite', referenceImageUrl, customerData);
+
+    if (!gridResult.success) {
+      // single fallback 폐기 — 사용자에게 그대로 전파
+      throw new Error(gridResult.message || 'PIN 합성 실패');
     }
+
+    console.log('🔲 PIN 모드: 결과 4분할 중...');
+    const splitImages = await splitPhotoGrid(gridResult.image);
+    results.push(...splitImages.map(img => ({ success: true, image: img })));
+    console.log('✅ PIN 모드 완료 - 4컷 생성 적용됨');
 
     const failedCount = results.filter(r => !r.success).length;
     const filteredPhotos = results.map((result) =>

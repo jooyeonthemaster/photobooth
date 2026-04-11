@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import './styles/index.css';
 
 // 컴포넌트 imports
@@ -54,6 +54,9 @@ export default function Home() {
   const [customerData, setCustomerData] = useState(null);
   const [referenceImageUrl, setReferenceImageUrl] = useState(null);
 
+  // 세션 ID — restart() 시 increment하여 stale fetch 결과 무시
+  const sessionIdRef = useRef(0);
+
   // PIN 모드 판별 (촬영 횟수 결정에 사용)
   const isPinMode = !!(referenceImageUrl && customerData);
   const totalShots = isPinMode ? 3 : 6;
@@ -106,6 +109,10 @@ export default function Home() {
       return;
     }
 
+    // 새 세션 시작 — 이전 세션은 자동 무효화
+    const mySession = ++sessionIdRef.current;
+    const isCurrentSession = () => sessionIdRef.current === mySession;
+
     setIsCombining(true);
     setIsFilteringAll(true);
 
@@ -119,10 +126,18 @@ export default function Home() {
         });
       } catch (error) {
         if (error.message === 'FILTER_CONFIG_MISSING') {
-          alert('⚠️ 필터 설정이 없습니다.\n/admin 페이지에서 필터를 설정해주세요.');
+          if (isCurrentSession()) {
+            alert('⚠️ 필터 설정이 없습니다.\n/admin 페이지에서 필터를 설정해주세요.');
+          }
           return;
         }
         throw error;
+      }
+
+      // 세션 무효화 체크 (사용자가 탈출 버튼 눌렀을 수도)
+      if (!isCurrentSession()) {
+        console.log('[Session] processPhotosWithFilters stale result discarded');
+        return;
       }
 
       console.log('✅ 처리 완료');
@@ -134,20 +149,34 @@ export default function Home() {
       const customText = customerData?.idolName || '';
       const result = await combinePhotos(processed.filteredPhotos, selectedFrame, 'none', customText, frameVariant);
 
+      // 세션 무효화 체크
+      if (!isCurrentSession()) {
+        console.log('[Session] combinePhotos stale result discarded');
+        return;
+      }
+
       if (result.success) {
         console.log('✅ 합성 완료');
         setPreviewComposite(result.path);
         setFinalImage(result.path);
         setStep('sticker');
       } else {
-        alert('합성 실패: ' + result.message);
+        alert('합성에 실패했습니다. 다시 시도해주세요.');
+        restart();
       }
     } catch (error) {
       console.error('❌ 필터 적용 또는 합성 실패:', error);
-      alert('처리 중 오류가 발생했습니다: ' + error.message);
+      // 세션 유효할 때만 사용자에게 alert + 홈으로 복귀
+      if (isCurrentSession()) {
+        alert('합성에 실패했습니다. 다시 시도해주세요.');
+        restart();
+      }
     } finally {
-      setIsCombining(false);
-      setIsFilteringAll(false);
+      // 세션 유효할 때만 플래그 정리 (옛 세션이 새 세션 플래그를 끄지 않도록)
+      if (isCurrentSession()) {
+        setIsCombining(false);
+        setIsFilteringAll(false);
+      }
     }
   };
 
@@ -245,11 +274,11 @@ export default function Home() {
   };
 
   // ========== 프린터 로직 ==========
-  const handlePrintImage = async () => {
+  const handlePrintImage = async (copies = 1) => {
     if (!finalImage) return;
     setIsPrinting(true);
     try {
-      const result = await window.electronAPI.printImage(finalImage);
+      const result = await window.electronAPI.printImage(finalImage, copies);
       if (result.success) {
         setShowPrintSuccess(true);
         setTimeout(() => {
@@ -277,6 +306,14 @@ export default function Home() {
   };
 
   const restart = () => {
+    // 진행 중인 세션 무효화 — 옛 fetch가 끝나도 결과 폐기됨
+    sessionIdRef.current++;
+
+    // 진행 중 플래그 즉시 리셋 (탈출 버튼이 즉시 작동하도록)
+    setIsCombining(false);
+    setIsFilteringAll(false);
+    setIsApplyingFilter(false);
+
     setStep('intro');
     setCapturedPhotos([]);
     setFinalImage(null);
@@ -387,6 +424,7 @@ export default function Home() {
           placedStickers={placedStickers}
           setPlacedStickers={setPlacedStickers}
           customerData={customerData}
+          onHome={restart}
         />
       )}
 
@@ -416,6 +454,7 @@ export default function Home() {
         streamRef={streamRef}
         cameraMode={cameraMode}
         cameraReady={cameraReady}
+        onTimeout={restart}
       />
     </div>
   );

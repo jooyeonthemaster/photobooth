@@ -208,9 +208,6 @@ export default function PinScreen({ onPinVerified, onSkip, onBack }) {
           )}
 
           <div className="pin-actions">
-            <button className="pin-skip-btn" onClick={onSkip}>
-              BYPASS PIN
-            </button>
             <button className="pin-back-btn" onClick={onBack}>
               [ RETURN ]
             </button>

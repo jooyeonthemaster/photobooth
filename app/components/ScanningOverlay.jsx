@@ -1,21 +1,29 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useHandTracking } from '../hooks/useHandTracking';
 import { useMotionDetection } from '../hooks/useMotionDetection';
 
-export default function ScanningOverlay({ isVisible, mode = 'full', isPinMode = false, streamRef, cameraMode, cameraReady }) {
+// 합성이 5분 넘게 끝나지 않으면 탈출 버튼 노출
+const ESCAPE_TIMEOUT_MS = 5 * 60 * 1000;
+
+export default function ScanningOverlay({ isVisible, mode = 'full', isPinMode = false, streamRef, cameraMode, cameraReady, onTimeout }) {
   const [currentPhase, setCurrentPhase] = useState(0);
   const [isGlitching, setIsGlitching] = useState(false);
+  const [showEscape, setShowEscape] = useState(false);
   const startTimeRef = useRef(null);
 
-  const handTracking = useHandTracking(streamRef, cameraMode, cameraReady, isVisible);
   const motionDetection = useMotionDetection(streamRef, cameraMode, cameraReady, isVisible);
+  const { motionCenter } = motionDetection;
 
-  const handCompat = handTracking.getMotionCompat();
-  const { motionCenter } = handCompat.isAwake
-    ? handCompat
-    : motionDetection;
+  // 5분 타임아웃: 탈출 버튼 노출
+  useEffect(() => {
+    if (!isVisible) {
+      setShowEscape(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowEscape(true), ESCAPE_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [isVisible]);
 
   const phases = mode === 'full'
     ? isPinMode
@@ -120,6 +128,17 @@ export default function ScanningOverlay({ isVisible, mode = 'full', isPinMode = 
           />
         ))}
       </div>
+
+      {/* 5분 초과 시 탈출 버튼 */}
+      {showEscape && onTimeout && (
+        <button
+          type="button"
+          className="scanning-escape-btn"
+          onClick={onTimeout}
+        >
+          처음 화면으로 돌아가기
+        </button>
+      )}
     </div>
   );
 }

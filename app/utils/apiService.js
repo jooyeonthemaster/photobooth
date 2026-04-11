@@ -117,7 +117,7 @@ export const applyFilterGrid = async (gridImage, filterType, referenceImageUrl =
  * @param {number} quality - JPEG 품질 (0.0 ~ 1.0, 기본값: 0.7)
  * @returns {Promise<string>} 압축된 Base64 이미지
  */
-const compressImage = async (base64Image, maxWidth = 1200, quality = 0.7) => {
+export const compressImage = async (base64Image, maxWidth = 1200, quality = 0.7) => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {

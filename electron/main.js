@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session } = require('electron');
+const { app, BrowserWindow, session, ipcMain } = require('electron');
 const path = require('path');
 const http = require('http');
 const fs = require('fs');
@@ -9,6 +9,20 @@ const { PrinterService } = require('./printer-service');
 
 const isDev = process.env.NODE_ENV === 'development';
 const PORT = 3000;
+
+// ── 디버그 로그 파일 (빌드 문제 추적용) ─────────────────────────────
+const logFile = path.join(app.getPath('userData'), 'photobooth-debug.log');
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+function writeLog(level, ...args) {
+  const msg = `[${new Date().toISOString()}][${level}] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}\n`;
+  try { fs.appendFileSync(logFile, msg); } catch {}
+}
+console.log = (...args) => { originalConsoleLog(...args); writeLog('LOG', ...args); };
+console.error = (...args) => { originalConsoleError(...args); writeLog('ERR', ...args); };
+console.warn = (...args) => { originalConsoleWarn(...args); writeLog('WARN', ...args); };
+console.log(`[Debug] Log file: ${logFile}`);
 
 let mainWindow = null;
 let cameraService = null;
@@ -62,6 +76,10 @@ function startNextServer() {
 
     const serverPath = findServerPath();
     const serverDir = path.dirname(serverPath);
+
+    // .env.local 존재 확인 (Next.js @next/env가 자동 로드)
+    const envPath = path.join(serverDir, '.env.local');
+    console.log('[Next.js] .env.local exists:', fs.existsSync(envPath), 'at:', envPath);
 
     // Electron 내장 Node.js로 직접 서버 실행 (별도 node 설치 불필요)
     process.env.PORT = String(PORT);
@@ -125,7 +143,6 @@ function createWindow() {
         frame: false,
         alwaysOnTop: true,
         skipTaskbar: true,
-        closable: false,
         resizable: false,
         movable: false,
         minimizable: false,
@@ -147,9 +164,6 @@ function createWindow() {
   // Show window once content is painted
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
-    if (isDev) {
-      mainWindow.webContents.openDevTools();
-    }
     if (!isDev) {
       mainWindow.setAlwaysOnTop(true, 'screen-saver');
     }
@@ -211,19 +225,37 @@ function createWindow() {
     `);
   });
 
-  // ── Re-focus on blur (Alt+Tab fallback) ──
-  if (!isDev) {
-    mainWindow.on('blur', () => {
-      if (!app.isQuitting && !mainWindow.isDestroyed()) {
-        setTimeout(() => {
-          if (!app.isQuitting && !mainWindow.isDestroyed()) {
-            mainWindow.focus();
-            mainWindow.moveTop();
+  // ── Admin force quit via IPC (DOM keydown → preload → here) ──
+  ipcMain.on('admin-force-quit', () => {
+    console.log('[Main] admin-force-quit IPC received — killing process.');
+    app.isQuitting = true;
+    if (cameraService) {
+      cameraService.shutdown();
+      cameraService = null;
+    }
+    process.exit(0);
+  });
+
+  // ── Inject admin escape key listener into web page ──
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.executeJavaScript(`
+      document.addEventListener('keydown', (e) => {
+        // Ctrl+Shift+F12 또는 Ctrl+Alt+Shift+Q 또는 Ctrl+Alt+Shift+D
+        if (
+          (e.ctrlKey && e.shiftKey && e.key === 'F12') ||
+          (e.ctrlKey && e.altKey && e.shiftKey && (e.key === 'q' || e.key === 'Q')) ||
+          (e.ctrlKey && e.altKey && e.shiftKey && (e.key === 'd' || e.key === 'D'))
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.electronAPI && window.electronAPI.app && window.electronAPI.app.quit) {
+            window.electronAPI.app.quit();
           }
-        }, 100);
-      }
-    });
-  }
+        }
+      }, true);
+      console.log('[KioskEscape] DOM keydown listener injected');
+    `);
+  });
 
   // ── Prevent close unless quitting ──
   mainWindow.on('close', (event) => {
@@ -263,7 +295,7 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:* ws://localhost:* https://*.googleapis.com https://*.supabase.co https://*.fal.ai; worker-src 'self' blob:;",
+          "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self' data:; connect-src 'self' http://localhost:* ws://localhost:* https://*.googleapis.com https://*.supabase.co https://*.fal.ai; worker-src 'self' blob:;",
         ],
       },
     });

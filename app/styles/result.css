@@ -210,3 +210,45 @@
     transform: rotate(360deg);
   }
 }
+
+/* ========== 장수 선택 그리드 ========== */
+.copies-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.copies-btn {
+  height: 64px;
+  border: 2px solid rgba(0, 229, 255, 0.4);
+  border-radius: 14px;
+  background: rgba(0, 229, 255, 0.05);
+  color: #00e5ff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.copies-btn span {
+  font-size: 0.85rem;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.copies-btn.active {
+  border-color: #00e5ff;
+  background: rgba(0, 229, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+.copies-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

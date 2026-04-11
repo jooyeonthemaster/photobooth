@@ -14,8 +14,6 @@ class PrinterService {
 
   /**
    * Resolve DnpPrinter.exe path for both dev and packaged environments.
-   * Dev: <project>/printer-service/DnpPrinter.exe
-   * Packaged: <resourcesPath>/printer-service/DnpPrinter.exe
    */
   _findPrinterExe() {
     const candidates = app.isPackaged
@@ -61,9 +59,27 @@ class PrinterService {
   }
 
   /**
+   * Execute a single print job.
+   */
+  async _executePrint(exePath, tempFilePath) {
+    const command = `"${exePath}" "${tempFilePath}"`;
+    console.log('[PrinterService] Executing:', command);
+
+    const { stdout, stderr } = await execAsync(command, {
+      timeout: 30000,
+    });
+
+    console.log('[PrinterService] stdout:', stdout);
+    if (stderr) {
+      console.warn('[PrinterService] stderr:', stderr);
+    }
+    return stdout;
+  }
+
+  /**
    * Print a base64-encoded image via DnpPrinter.exe.
    */
-  async printImage(base64Image) {
+  async printImage(base64Image, copies = 1) {
     let tempFilePath = null;
 
     try {
@@ -75,18 +91,17 @@ class PrinterService {
         };
       }
 
+      console.log(`[PrinterService] Printing ${copies} copies`);
+
       tempFilePath = await this._writeTempFile(base64Image);
 
-      const command = `"${exePath}" "${tempFilePath}"`;
-      console.log('[PrinterService] Executing:', command);
-
-      const { stdout, stderr } = await execAsync(command, {
-        timeout: 30000,
-      });
-
-      console.log('[PrinterService] stdout:', stdout);
-      if (stderr) {
-        console.warn('[PrinterService] stderr:', stderr);
+      // Print N copies sequentially
+      for (let i = 0; i < copies; i++) {
+        console.log(`[PrinterService] Printing copy ${i + 1}/${copies}`);
+        await this._executePrint(exePath, tempFilePath);
+        if (i < copies - 1) {
+          await new Promise(r => setTimeout(r, 2000));
+        }
       }
 
       // Delay cleanup to let printer finish reading the file
@@ -94,8 +109,7 @@ class PrinterService {
 
       return {
         success: true,
-        message: 'DNP 프린터로 출력을 시작했습니다!',
-        output: stdout,
+        message: `DNP 프린터로 ${copies}장 출력을 시작했습니다!`,
       };
     } catch (err) {
       console.error('[PrinterService] Print error:', err);
@@ -108,7 +122,6 @@ class PrinterService {
       if (err.killed) {
         userMessage = '프린터 응답 시간이 초과되었습니다 (30초). 프린터 상태를 확인해주세요.';
       } else {
-        // DnpPrinter.exe는 에러를 stdout으로 출력하므로 stdout을 우선 확인
         const detail = err.stdout?.trim() || err.stderr?.trim() || err.message;
         userMessage = '프린터 출력에 실패했습니다: ' + detail;
       }
@@ -156,8 +169,8 @@ class PrinterService {
     if (this._registered) return;
     this._registered = true;
 
-    ipcMain.handle('printer:print', async (_event, base64Image) => {
-      return await this.printImage(base64Image);
+    ipcMain.handle('printer:print', async (_event, base64Image, copies) => {
+      return await this.printImage(base64Image, copies);
     });
 
     ipcMain.handle('printer:check', async () => {

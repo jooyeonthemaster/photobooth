@@ -104,7 +104,7 @@ function generateWhiteText(text, size = 500) {
 }
 
 // 스티커 꾸미기 화면 컴포넌트
-export default function StickerScreen({ finalImage, onComplete, onSkip, frameVariant = 'black', onFrameVariantChange, placedStickers, setPlacedStickers, customerData }) {
+export default function StickerScreen({ finalImage, onComplete, onSkip, onHome, frameVariant = 'black', onFrameVariantChange, placedStickers, setPlacedStickers, customerData }) {
   const [bgImage, setBgImage] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [activeCategory, setActiveCategory] = useState('shapes');
@@ -600,6 +600,9 @@ export default function StickerScreen({ finalImage, onComplete, onSkip, frameVar
         </div>
 
         <div className="sticker-toolbar">
+          <button className="sticker-home-btn" onClick={onHome}>
+            홈으로
+          </button>
           <button className="sticker-skip-btn" onClick={onSkip}>
             건너뛰기
           </button>

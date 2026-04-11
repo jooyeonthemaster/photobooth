@@ -15,6 +15,7 @@ export default function ResultScreen({
   qrUrl,
   isUploading,
 }) {
+  const [copies, setCopies] = useState(1);
   // 프린트 완료 후 30초 자동 홈 복귀 카운트다운
   const [countdown, setCountdown] = useState(null);
   const onRestartRef = useRef(onRestart);
@@ -66,7 +67,7 @@ export default function ResultScreen({
           </div>
         ) : null}
 
-        {/* 버튼 영역 */}
+        {/* 장수 선택 + 버튼 영역 */}
         <div className="result-actions">
           {printDone ? (
             <button className="home-btn" onClick={onRestart}>
@@ -77,16 +78,21 @@ export default function ResultScreen({
             </button>
           ) : (
             <>
-              <button
-                className="back-btn"
-                onClick={onBack}
-                disabled={isPrinting}
-              >
-                ← 뒤로
-              </button>
+              <div className="copies-grid">
+                {[1, 2, 3, 4].map(n => (
+                  <button
+                    key={n}
+                    className={`copies-btn ${copies === n ? 'active' : ''}`}
+                    onClick={() => setCopies(n)}
+                    disabled={isPrinting}
+                  >
+                    {n}<span>장</span>
+                  </button>
+                ))}
+              </div>
               <button
                 className="print-btn"
-                onClick={onPrint}
+                onClick={() => onPrint(copies)}
                 disabled={isPrinting}
               >
                 {isPrinting ? (
@@ -95,8 +101,15 @@ export default function ResultScreen({
                     출력 중...
                   </>
                 ) : (
-                  '출력하기'
+                  `${copies}장 출력하기`
                 )}
+              </button>
+              <button
+                className="back-btn"
+                onClick={onBack}
+                disabled={isPrinting}
+              >
+                ← 뒤로
               </button>
             </>
           )}
