@@ -1,4 +1,4 @@
-// Seedream 5.0 Lite 합성 프롬프트 (PIN 모드 전용)
+// PIN 모드 합성 프롬프트 (스타일 선택 지원)
 
 // 상반신 포즈 풀 (2~4명 호환, 성별 무관, 팬미팅 감성)
 // 각 포즈의 행동이 확실히 다르도록 설계 — 유사 포즈 제거
@@ -27,27 +27,36 @@ function pickPoses() {
   return [...mediums, topview];
 }
 
-export function buildSeedreamPrompt(customerData, mode) {
+// 선택 가능한 화풍 프리셋 — 유저+레퍼런스 모두 이 화풍으로 재렌더 (실사 레퍼도 변환)
+export const STYLE_PRESETS = {
+  webtoon: 'a soft casual Korean slice-of-life webtoon style — thin, nearly-lineless outlines, flat soft shading with gentle low-contrast lighting, a warm muted pastel palette, simplified friendly rounded faces with calm medium eyes, cozy and understated',
+  semireal: 'a polished semi-realistic Korean manhwa style — crisp precise defined linework, realistic proportions and accurate facial anatomy, small refined eyes with a strong upper-lash line and a defined nose, smooth airbrush gradient rendering with glossy skin and hair, a subdued cinematic palette of deep blues and warm browns, mature (clearly a drawn illustration, not a photo)',
+  sunjeong: 'a dreamy Korean sunjeong romance webtoon look — delicate thin ink linework, huge glittering sparkling eyes with star-shaped highlights, long flowing finely detailed hair, slender elegant proportions, soft pastel colors with flower and glow accents, delicate and idol-pretty',
+  ropan: 'an opulent fantasy-romance (royal-court) webtoon style — elegant delicate linework, large jewel-like eyes, ornately detailed royal gowns jewelry and lace, luminous sparkling highlights over hair and eyes, richly painted palace backgrounds, saturated jewel-tone colors with a soft glow, luxurious and fairytale-like',
+  anime: 'a bold modern Japanese TV-anime cel style — crisp thick clean outlines, flat cel shading with hard sharp shadow edges, punchy high-saturation colors, glossy rim light and subtle digital glow, big glossy expressive anime eyes with multiple highlights, sleek and polished',
+  idoleye: 'a modern idol-anime style with hyper-detailed eyes — a clean simple face contrasted with elaborate glossy eyes full of star- and galaxy-shaped highlights and color gradients, vivid high-saturation colorful hair, sleek trendy idol styling, bright and glittery',
+  cinematic: 'a cinematic glow anime style — soft clean character linework, warm golden-hour lighting with lens flare and glowing bokeh, a saturated deep-blue-shadow to orange-highlight color grade, large glossy emotional eyes, dreamy and romantic',
+  watertoon: 'a soft hand-painted watercolor storybook anime style — gentle clean line art with flat soft-colored characters set against warm hand-painted watercolor backgrounds, soft natural daylight, a cozy nostalgic muted palette, rounded friendly faces with simple expressive eyes, warm and storybook-like',
+  chibi: 'a cute chibi super-deformed anime style — an oversized round head on a tiny stubby body (about 2 heads tall), huge glossy sparkling anime eyes, a tiny simplified nose and mouth, clean bold outlines with soft flat cel shading, bright candy-pastel colors, adorable and playful',
+  figurine: 'a glossy collectible chibi figurine style — the subject as a smooth hard vinyl toy figure with big-head small-body proportions, a clean glossy plastic surface with soft reflective highlights, simplified cute sculpted features, clean studio product lighting like a blind-box collectible figure',
+  render3d: 'a soft 3D animated-movie heroine style — soft dewy porcelain skin, large sparkling doe eyes with long lashes and bright catchlights, delicate rounded features, glossy flowing voluminous hair, rosy blush, warm magical rim lighting, a cute 3D animated-film character render',
+  watercolor: 'a soft dreamy watercolor painting style — gentle wet watercolor washes and gouache texture, a muted dreamy pastel palette, delicate simplified features, soft warm picture-book lighting, hand-painted tenderness on visible textured paper',
+};
+export const DEFAULT_STYLE = 'webtoon';
+
+export function buildSeedreamPrompt(customerData, mode, style = DEFAULT_STYLE) {
+  const styleDesc = STYLE_PRESETS[style] || STYLE_PRESETS[DEFAULT_STYLE];
+
   if (mode === 'grid') {
     const poses = pickPoses();
 
     return [
-      `The first image is a photo of the user(s). The second image is a reference person/character.`,
-      `IMPORTANT: If either image contains multiple people, ALL of them must appear in every panel — do NOT omit anyone from either image.`,
-      `Generate a 2x2 grid output with 4 panels, no borders or gaps between panels, tiling edge-to-edge.`,
-      `CRITICAL: Each panel MUST be clearly distinguishable from the others. Vary the camera distance (close-up vs full-body), camera angle (eye-level, high angle, low angle), body orientation, and spatial arrangement between panels. No two panels should look similar.`,
-      `STYLE MATCHING (CRITICAL): Carefully analyze the SPECIFIC art style of the reference character in the second image — including line weight, shading technique, color palette, level of detail, eye style, proportions, and rendering method. Reproduce that EXACT same visual style for the entire output. Do NOT default to a generic anime/cartoon look — match the reference image's unique style precisely. If the reference is a real photo, keep photorealistic. Maintain this style consistently across all 4 panels.`,
-      `In each panel, place ALL people from the first image together with ALL people/characters from the reference image. Every person from both images must appear in every panel — do NOT omit anyone. Transform all users into the same art style as the reference — they must look like they belong in the same universe/show as the reference characters. Preserve each user's face identity (facial features, face shape) while adapting to the art style. IMPORTANT: The user's head/face size must match the reference character's head/face size — do NOT make the user's head appear larger.`,
-      `Preserve every reference character's EXACT visual design — face, hair color/style, outfit, skin tone, accessories, and distinctive features — consistently across all 4 panels. Each character must be clearly distinguishable from the others.`,
-      `BEAUTY ENHANCEMENT (APPLY ONLY TO THE USER FROM THE FIRST IMAGE — do NOT alter the reference character's appearance in any way): The user's face must remain clearly recognizable as the same person in the first image across ALL 4 panels. SKIN: Smooth out blemishes, acne, pores, and uneven skin texture to a clean, clear finish. Even out skin tone and remove redness or dark spots. Reduce wrinkles, fine lines, and under-eye circles. FACIAL HAIR: Remove all visible facial hair — stubble, beard, mustache, and beard shadow — so the skin appears clean-shaven. FACE SHAPE (IMPORTANT): Cameras add weight and width to faces. You MUST compensate for this by making the user's face appear slimmer and more defined than in the input photo — slim the jawline, reduce cheek width, and define the chin. The result should look like how the person looks in real life, not how the camera captured them. BODY: Make the user's body appear slightly slimmer and well-proportioned. LIGHTING: Use soft, flattering lighting that minimizes harsh shadows. The user should look like their best natural self. The reference character from the second image must remain EXACTLY as they appear in the original — no modifications.`,
-      `Panel 1 (top-left): ${poses[0]}.`,
-      `Panel 2 (top-right): ${poses[1]}.`,
-      `Panel 3 (bottom-left): ${poses[2]}.`,
-      `Panel 4 (bottom-right): ${poses[3]}.`,
-      `Preserve the user's original facial expression from the input photo — do not alter their smile, mouth shape, or expression.`,
-      `FRAMING: All subjects must be fully contained within each panel — no body parts, heads, or limbs cut off or extending beyond the panel boundary. Leave adequate margin from the edges.`,
-      `FORBIDDEN: tongue out, duck face, kissing, pouting, identical or near-identical compositions across panels, same camera distance in all panels.`,
-      `White-to-light-gray gradient background. No text, watermarks, logos, or borders.`,
+      `Image 1 = the real user(s) in their OWN clothes. Image 2 = the reference character(s). There may be one or several people in each image; ALL of them must appear together in every panel — do not omit anyone.`,
+      `Generate a 2x2 grid of 4 panels, edge-to-edge, no borders or gaps. Make the 4 panels clearly different from each other — vary the camera distance (close-up vs full-body), the angle (eye-level / high / low), and the arrangement. Panel 1: ${poses[0]}. Panel 2: ${poses[1]}. Panel 3: ${poses[2]}. Panel 4: ${poses[3]}.`,
+      `STYLE: Redraw EVERYONE — users and references — in ONE consistent art style: ${styleDesc}. Even if an image is a real photo, fully convert it into this illustration style; keep nobody photorealistic. This unified style applies to the drawing medium ONLY — it must NOT make different people look alike.`,
+      `KEEP EACH PERSON THEMSELF: every user keeps their OWN face, their distinctive features (eye and eyelid shape, nose, lips, face and jaw shape, moles), their OWN hair, their OWN clothing, and their OWN ethnicity exactly as in image 1 — do NOT Westernize or lighten an Asian user, and do NOT put a reference's outfit or features onto a user. Each reference keeps its own face, hair, and outfit from image 2.`,
+      `Everyone must stay a clearly distinct, recognizable individual — never merge, average, swap, or duplicate any two people, even in close-up panels. CONSISTENCY: the SAME user must look like the SAME single person with an identical face in ALL 4 panels — a user's face must not change, drift, or shift ethnicity between panels; panels 1, 2, 3 and 4 must show the exact same user. Keep each user's real face and natural expression (do NOT turn them into a generic pretty/handsome face).`,
+      `All subjects fully inside each panel with margin. No tongue-out, duck-face, or kissing. White-to-light-gray gradient background; no text, logos, or watermarks.`,
     ].join(' ');
   }
 
@@ -56,9 +65,8 @@ export function buildSeedreamPrompt(customerData, mode) {
   return [
     `The second image is a reference person/character.`,
     `IMPORTANT: ALL people from both images must appear — do NOT omit anyone.`,
-    `STYLE: Match the reference's art style precisely. If reference is a photo, keep photorealistic. Transform user into this style, preserve face identity and original skin tone. Do not alter reference's appearance. The user and reference must remain two clearly distinct people — do NOT blend or swap their facial features.`,
+    `STYLE: Redraw BOTH the user and the reference person/character in the unified art style: ${styleDesc}. Even if the reference is a real photo, convert it fully into this style — do NOT keep anyone photorealistic. Preserve the user's face identity; preserve the reference's identity/design (hair, outfit, features) but redrawn in this style. The user and reference must remain two clearly distinct people — do NOT blend or swap their facial features.`,
     `Generate a photobooth photo with all people from both images. Pose: ${pose}.`,
-    `BEAUTY (user only): Smooth skin, remove blemishes. Preserve original skin tone — do not darken. Remove facial hair, slim jawline/cheeks for camera compensation. Soft even lighting. Natural and attractive.`,
     `FORBIDDEN: tongue out, duck face, kissing, pouting.`,
     `White-to-light-gray gradient background. No text or watermarks.`,
   ].join(' ');

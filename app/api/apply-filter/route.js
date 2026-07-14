@@ -18,7 +18,7 @@ export async function POST(request) {
     // 매 요청마다 credentials 설정 (standalone 빌드에서 모듈 스코프 타이밍 문제 방지)
     fal.config({ credentials: process.env.FAL_KEY });
 
-    const { image, filterType, referenceImageUrl, customerData, mode } = await request.json();
+    const { image, filterType, referenceImageUrl, customerData, mode, style } = await request.json();
 
     if (!image) {
       return NextResponse.json(
@@ -27,39 +27,36 @@ export async function POST(request) {
       );
     }
 
-    // 🔥 PIN 모드 (acscent-composite): Seedream 5.0 Lite로 합성
-    // 실패 시 2초 대기 후 재시도 (5분 deadline)
+    // 🔥 PIN 모드 (acscent-composite): Nano Banana 2 Lite로 합성
+    // 실패 시 2초 대기 후 재시도 (최대 3회)
     if (filterType === 'acscent-composite' && customerData && referenceImageUrl) {
-      const seedreamPrompt = buildSeedreamPrompt(customerData, mode);
+      const seedreamPrompt = buildSeedreamPrompt(customerData, mode, style);
       const imageData = image.replace(/^data:image\/[a-z]+;base64,/, "");
       const imageUrls = [
         `data:image/jpeg;base64,${imageData}`,
         referenceImageUrl,
       ];
-      const imageSize = mode === 'grid' ? 'auto_3K' : 'auto_2K';
       const filterName = mode === 'grid' ? "AC'SCENT Composite (Grid)" : "AC'SCENT Composite";
 
-      console.log(`[Seedream] User image size (base64 chars):`, imageData.length);
-      console.log(`[Seedream] Settings: ${imageUrls.length} images, size=${imageSize}, mode=${mode}`);
+      console.log(`[NB2] User image size (base64 chars):`, imageData.length);
+      console.log(`[NB2] Settings: ${imageUrls.length} images, style=${style || 'webtoon'}, mode=${mode}`);
 
-      const DEADLINE_MS = 5 * 60 * 1000;
+      const MAX_ATTEMPTS = 3; // NB2는 IP 거부가 없어 5분 루프 불필요 — 일시적 오류 대비 짧은 재시도만
       const RETRY_DELAY_MS = 2000;
       const startTime = Date.now();
-      const deadline = startTime + DEADLINE_MS;
       let attempt = 0;
 
-      while (Date.now() < deadline) {
+      while (attempt < MAX_ATTEMPTS) {
         attempt++;
-        console.log(`[Seedream] Attempt ${attempt} at +${((Date.now() - startTime) / 1000).toFixed(1)}s`);
+        console.log(`[NB2] Attempt ${attempt}/${MAX_ATTEMPTS} at +${((Date.now() - startTime) / 1000).toFixed(1)}s`);
 
         try {
-          const result = await fal.subscribe("fal-ai/bytedance/seedream/v5/lite/edit", {
+          const result = await fal.subscribe("google/nano-banana-2-lite/edit", {
             input: {
               prompt: seedreamPrompt,
               image_urls: imageUrls,
-              image_size: imageSize,
               num_images: 1,
-              enable_safety_checker: false,
+              safety_tolerance: 6, // 1=엄격 ~ 6=관대. 유명 IP 레퍼런스 통과 위해 최대 관대로
             },
           });
 
@@ -70,30 +67,30 @@ export async function POST(request) {
             const finalImageData = Buffer.from(buffer).toString('base64');
             const mimeType = result.data.images[0].content_type || 'image/png';
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-            console.log(`[Seedream] SUCCESS on attempt ${attempt} after ${elapsed}s`);
+            console.log(`[NB2] SUCCESS on attempt ${attempt} after ${elapsed}s`);
 
             return NextResponse.json({
               success: true,
               image: `data:${mimeType};base64,${finalImageData}`,
               filterName,
-              message: `${filterName} 필터가 적용되었습니다! (Seedream 5.0 Lite)`
+              message: `${filterName} 필터가 적용되었습니다! (Nano Banana 2 Lite)`
             });
           }
 
-          console.warn(`[Seedream] Attempt ${attempt}: no image returned`);
+          console.warn(`[NB2] Attempt ${attempt}: no image returned`);
         } catch (err) {
-          console.warn(`[Seedream] Attempt ${attempt} failed: ${err.message}`);
+          console.warn(`[NB2] Attempt ${attempt} failed: ${err.message}`);
         }
 
-        if (Date.now() + RETRY_DELAY_MS < deadline) {
+        if (attempt < MAX_ATTEMPTS) {
           await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
         }
       }
 
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      console.error(`[Seedream] All ${attempt} attempts failed after ${elapsed}s`);
+      console.error(`[NB2] All ${attempt} attempts failed after ${elapsed}s`);
       return NextResponse.json(
-        { success: false, message: `Seedream 합성 실패 (${attempt}회 시도, ${elapsed}초)` },
+        { success: false, message: `AI 합성 실패 (${attempt}회 시도, ${elapsed}초)` },
         { status: 502 }
       );
     }

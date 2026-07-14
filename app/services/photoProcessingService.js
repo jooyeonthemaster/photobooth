@@ -9,6 +9,7 @@ export async function processPhotosWithFilters({
   isPinMode,
   referenceImageUrl,
   customerData,
+  style,
 }) {
   const results = [];
 
@@ -24,7 +25,7 @@ export async function processPhotosWithFilters({
     const compressedPhoto = await compressImage(singlePhoto, 1200, 0.85);
 
     console.log('📸 PIN 모드: 1장 → Seedream 4컷 생성 중...');
-    const gridResult = await applyFilterGrid(compressedPhoto, 'acscent-composite', referenceImageUrl, customerData);
+    const gridResult = await applyFilterGrid(compressedPhoto, 'acscent-composite', referenceImageUrl, customerData, style);
 
     if (!gridResult.success) {
       // single fallback 폐기 — 사용자에게 그대로 전파

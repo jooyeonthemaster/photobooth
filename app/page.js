@@ -12,6 +12,7 @@ import SelectScreen from './components/SelectScreen';
 import EditScreen from './components/EditScreen';
 import ResultScreen from './components/ResultScreen';
 import StickerScreen from './components/StickerScreen';
+import StyleSelectScreen from './components/StyleSelectScreen';
 import PrintSuccessModal from './components/PrintSuccessModal';
 import ScanningOverlay from './components/ScanningOverlay';
 
@@ -49,6 +50,9 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [frameVariant, setFrameVariant] = useState('black');
   const [placedStickers, setPlacedStickers] = useState([]);
+
+  // 화풍 선택 (PIN 모드 acscent-composite에 적용)
+  const [selectedStyle, setSelectedStyle] = useState('webtoon');
 
   // AC'SCENT 연동 상태
   const [customerData, setCustomerData] = useState(null);
@@ -103,7 +107,7 @@ export default function Home() {
   };
 
   // ========== 프리뷰 합성 ==========
-  const createPreviewComposite = async () => {
+  const createPreviewComposite = async (styleOverride = null) => {
     if (selectedSlots.includes(null)) {
       alert(isPinMode ? '사진을 선택해주세요!' : '4개의 사진을 모두 선택해주세요!');
       return;
@@ -123,6 +127,7 @@ export default function Home() {
       try {
         processed = await processPhotosWithFilters({
           selectedPhotos, isPinMode, referenceImageUrl, customerData,
+          style: styleOverride ?? selectedStyle,
         });
       } catch (error) {
         if (error.message === 'FILTER_CONFIG_MISSING') {
@@ -178,6 +183,20 @@ export default function Home() {
         setIsFilteringAll(false);
       }
     }
+  };
+
+  // ========== 화풍 선택 ==========
+  // select 화면 다음: PIN 모드는 화풍 선택 화면으로, 일반 모드는 바로 생성
+  const handleSelectProceed = () => {
+    if (isPinMode) {
+      setStep('style');
+    } else {
+      createPreviewComposite();
+    }
+  };
+
+  const handleStyleConfirm = () => {
+    createPreviewComposite();
   };
 
   // ========== 필터 적용 로직 ==========
@@ -331,6 +350,7 @@ export default function Home() {
     setPlacedStickers([]);
     setCustomerData(null);
     setReferenceImageUrl(null);
+    setSelectedStyle('webtoon');
   };
 
   // ========== 렌더링 ==========
@@ -379,7 +399,7 @@ export default function Home() {
           capturedPhotos={capturedPhotos}
           selectedSlots={selectedSlots}
           onSelectImage={selectImageForSlot}
-          onCreatePreview={createPreviewComposite}
+          onCreatePreview={handleSelectProceed}
           onResetSelection={() => setSelectedSlots(isPinMode ? [null] : [null, null, null, null])}
           onRetake={() => {
             setStep('ready');
@@ -390,6 +410,17 @@ export default function Home() {
           isCombining={isCombining}
           customerData={customerData}
           referenceImageUrl={referenceImageUrl}
+        />
+      )}
+
+      {step === 'style' && (
+        <StyleSelectScreen
+          onSelect={setSelectedStyle}
+          onConfirm={handleStyleConfirm}
+          onBack={() => setStep('select')}
+          selectedStyle={selectedStyle}
+          customerData={customerData}
+          isCombining={isCombining}
         />
       )}
 

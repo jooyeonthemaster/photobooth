@@ -77,7 +77,7 @@ export const splitPhotoGrid = async (gridImage) => {
  * 그리드 이미지에 AI 필터 적용 (mode: 'grid')
  * PIN 모드: referenceImageUrl, customerData 전달 시 참조 이미지 합성도 지원
  */
-export const applyFilterGrid = async (gridImage, filterType, referenceImageUrl = null, customerData = null) => {
+export const applyFilterGrid = async (gridImage, filterType, referenceImageUrl = null, customerData = null, style = null) => {
   try {
     const body = {
       image: gridImage,
@@ -86,6 +86,7 @@ export const applyFilterGrid = async (gridImage, filterType, referenceImageUrl =
     };
     if (referenceImageUrl) body.referenceImageUrl = referenceImageUrl;
     if (customerData) body.customerData = customerData;
+    if (style) body.style = style;
 
     const response = await fetch('/api/apply-filter', {
       method: 'POST',
