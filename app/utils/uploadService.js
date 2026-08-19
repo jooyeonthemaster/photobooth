@@ -30,8 +30,13 @@ export async function uploadPhoto(base64Image) {
   const client = getSupabase();
   if (!client) throw new Error('Upload service not configured');
 
-  // UUID 기반 파일명 (추측 불가능)
-  const photoId = crypto.randomUUID();
+  // 정렬키(역순 타임스탬프) + UUID 파일명.
+  //  - 역순 타임스탬프 접두어: (큰수 - 현재ms). Storage 대시보드가 이름 오름차순으로
+  //    정렬해도 최신 파일이 맨 위로 오게 만든다 (무료티어에 정렬 버튼이 없어서 필요).
+  //  - UUID는 그대로 유지: 파일명 추측 불가(프라이버시) + 같은 ms 업로드 충돌 방지.
+  const uuid = crypto.randomUUID();
+  const sortKey = (9999999999999 - Date.now()).toString().padStart(13, '0');
+  const photoId = `${sortKey}_${uuid}`;
   const filename = `${photoId}.jpg`;
 
   // Base64 data URL -> Uint8Array 변환

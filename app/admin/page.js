@@ -121,6 +121,9 @@ export default function AdminPage() {
         <button className="save-btn" onClick={handleSave}>
           💾 저장하기
         </button>
+        <a href="/admin/photos" className="back-btn">
+          📸 사진 관리
+        </a>
         <a href="/" className="back-btn">
           ← 포토부스로 돌아가기
         </a>

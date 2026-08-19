@@ -123,3 +123,30 @@ printer-service/DnpPrinter.exe
 
 
 
+
+# ── 빌드 산출물 (일렉트론) ──
+dist-new/
+dist-*/
+
+# ── AB 테스트 / 갤러리 프리뷰 산출물 ──
+scripts/ab-output/
+scripts/style-gallery/
+public/ab-test/
+photos-preview.html
+
+# ── 작업용 임시 자료 ──
+instructions/
+_backup_handtracking/
+test_combine.js
+test_guest_combine.js
+
+# ── 임시 이미지 ──
+guest.png
+public/1.jpg
+public/2.jpg
+public/3.jpg
+public/reference.png
+public/frame/guest_output.jpg
+
+# ── 문서(로컬 보관) ──
+악센트 아이디 AI 포토 부스 이용 가이드.txt
